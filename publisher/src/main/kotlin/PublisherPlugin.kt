@@ -67,9 +67,9 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         }
 
         model.release.version = model.release.version ?: target.version.toString()
+        model.release.vcsTag = model.release.vcsTag ?: "v${model.release.version!!}"
         model.release.description = model.release.description ?:
-                "${model.project.name!!} ${model.release.version!!}"
-        model.release.vcsTag = model.release.vcsTag ?: model.release.version
+                "${model.project.name!!} ${model.release.vcsTag!!}"
     }
 
     protected open fun checkModel(target: Project, model: M) {
@@ -112,7 +112,12 @@ abstract class PublisherPlugin<M : PublisherExtension>(
                         }
                     }
                 }
-
+                pom.scm {
+                    model.project.vcsUrl?.let { connection.set(it) }
+                    model.project.vcsUrl?.let { developerConnection.set(it) }
+                    model.project.url?.let { url.set(it) }
+                    model.release.vcsTag?.let { tag.set(it) }
+                }
             }
         }
     }
