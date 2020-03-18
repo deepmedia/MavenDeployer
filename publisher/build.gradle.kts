@@ -41,7 +41,7 @@ publisher {
     auth.key = "BINTRAY_KEY"
     auth.repo = "BINTRAY_REPO"
     project.artifact = "publisher"
-    project.description = "Handy tool to publish maven packages in different repositories."
+    project.description = "A lightweight, handly tool for publishing maven packages to different kinds of repositories"
     project.group = "com.otaliastudios.tools"
     project.url = "https://github.com/natario1/MavenPublisher"
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
