@@ -41,31 +41,46 @@ implementations can have extra fields (for example, for authentication).
 publisher {
     // Project name. Defaults to rootProject.name
     project.name = "MavenPublisher"
+    
     // Project description. Can be null
     project.description = "Handy tool to publish maven packages in different repositories."
+    
     // Package artifact. Defaults to project's archivesBaseName
     project.artifact = "publisher"
+    
     // Package group id. Defaults to project's group
     project.group = "com.otaliastudios.tools"
+    
     // Project url
     project.url = "https://github.com/natario1/MavenPublisher"
+    
     // Project VCS url. Defaults to project.url
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
+    
     // Project packaging. Automatically set to AAR for Android libraries
     project.packaging = "aar"
+    
     // Project licenses
     project.addLicense(License.APACHE_2_0)
     project.addLicense("My license", "https://mylicense.org")
+    
     // Release version. Defaults to project's version
     release.version = "0.1.4"
+    
     // Release VCS tag. Defaults to "v${release.version}"
     release.vcsTag = "v0.1.4"
+    
     // Release description. Defaults to "${project.name} {release.vcsTag}"
     release.description = "New release"
+    
     // Release sources
+    release.setSources(Release.SOURCES_AUTO) // creates a sources Jar
     release.setSources(sourcesJar.get())
+    
     // Release docs
+    release.setDocs(Release.DOCS_AUTO) // create a docs Jar
     release.setDocs(dokkaJar.get())
+
     // Publication name. Default value depends on the publisher implementation.
     publication = "bintray"
 }
