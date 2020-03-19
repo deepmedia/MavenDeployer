@@ -10,7 +10,7 @@
 
 # MavenPublisher
 
-A lightweight, handly tool for publishing your maven packages (for example, Android AARs or Java JARs)
+A lightweight, handy tool for publishing your maven packages (for example, Android AARs or Java JARs)
 to different kinds of repositories. Currently, only [Bintray](https://bintray.com) is supported.
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
