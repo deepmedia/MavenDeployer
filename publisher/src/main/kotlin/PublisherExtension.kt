@@ -61,6 +61,21 @@ abstract class PublisherExtension {
         fun setDocs(docsJar: Jar) {
             docs = docsJar
         }
+
+        fun setSources(sourcesProvider: Any) {
+            sources = sourcesProvider
+        }
+
+        fun setDocs(docsProvider: Any) {
+            docs = docsProvider
+        }
+
+        companion object {
+            @JvmField
+            val SOURCES_AUTO = Any()
+            @JvmField
+            val DOCS_AUTO = Any()
+        }
     }
     open val release: Release = Release()
 

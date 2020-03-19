@@ -7,8 +7,8 @@ buildscript {
         }
     }
     dependencies {
-        classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.9.17")
-        classpath("com.otaliastudios.tools:publisher:0.1.4")
+        // classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.9.17")
+        classpath("com.otaliastudios.tools:publisher:0.1.5")
     }
 }
 

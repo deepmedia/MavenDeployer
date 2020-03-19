@@ -1,5 +1,6 @@
 package com.otaliastudios.tools.publisher
 
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
 import org.gradle.api.Plugin
@@ -9,11 +10,17 @@ import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.PluginContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.register
+import org.jetbrains.dokka.gradle.DokkaPlugin
+import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import java.io.FileInputStream
-import java.lang.IllegalArgumentException
 import java.util.*
+import kotlin.IllegalArgumentException
 import kotlin.reflect.KClass
 
 abstract class PublisherPlugin<M : PublisherExtension>(
@@ -65,11 +72,28 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         if (model.project.packaging == null && target.isAndroidLibrary) {
             model.project.packaging = "aar"
         }
-
-        model.release.version = model.release.version ?: target.version.toString()
+        model.release.version = model.release.version ?:
+            if (target.isAndroid) {
+                val android = target.extensions.getByName("android") as BaseExtension
+                android.defaultConfig.versionName + android.defaultConfig.versionNameSuffix
+            } else {
+                target.version.toString()
+            }
         model.release.vcsTag = model.release.vcsTag ?: "v${model.release.version!!}"
         model.release.description = model.release.description ?:
                 "${model.project.name!!} ${model.release.vcsTag!!}"
+
+        // Auto-sources and auto-docs support
+        if (model.release.sources == PublisherExtension.Release.SOURCES_AUTO) {
+            model.release.setSources(createSourcesJar(target))
+        }
+        if (model.release.docs == PublisherExtension.Release.DOCS_AUTO) {
+            model.release.setDocs(if (target.isKotlin) {
+                createDocsKotlinJar(target)
+            } else {
+                createDocsJavaJar(target)
+            })
+        }
     }
 
     protected open fun checkModel(target: Project, model: M) {
@@ -146,8 +170,35 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         // We failed. Return null.
         return null
     }
+
+    private fun createSourcesJar(target: Project): Jar {
+        return target.tasks.create("autoSourcesTask", Jar::class.java) {
+            archiveClassifier.set("sources")
+            if (target.isAndroid) {
+                val android = target.extensions.getByName("android") as BaseExtension
+                from(android.sourceSets["main"].java.srcDirs)
+            } else {
+                val sourceSets = target.extensions.getByName("sourceSets") as SourceSetContainer
+                from(sourceSets["main"].allSource)
+            }
+        }
+    }
+
+    private fun createDocsKotlinJar(target: Project): Jar {
+        target.apply<DokkaPlugin>()
+        return target.tasks.create("autoDocsTask", Jar::class.java) {
+            val task = target.tasks["dokka"]
+            dependsOn(task)
+            archiveClassifier.set("javadoc")
+            from((task as DokkaTask).outputDirectory)
+        }
+    }
+
+    private fun createDocsJavaJar(target: Project): Jar {
+        throw IllegalArgumentException("Release.DOCS_AUTO only works in kotlin projects.")
+    }
 }
 
-
+val Project.isKotlin get() = plugins.toList().any { it is KotlinBasePluginWrapper }
 val Project.isAndroid get() = plugins.toList().any { it is AndroidBasePlugin }
 val Project.isAndroidLibrary get() = plugins.toList().any { it is LibraryPlugin }
