@@ -1,8 +1,8 @@
 package com.otaliastudios.tools.publisher
 
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -74,7 +74,7 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         }
         model.release.version = model.release.version ?:
             if (target.isAndroid) {
-                val android = target.extensions.getByName("android") as BaseAppModuleExtension
+                val android = target.extensions.getByName("android") as BaseExtension
                 android.defaultConfig.versionName + android.defaultConfig.versionNameSuffix
             } else {
                 target.version.toString()
@@ -175,7 +175,7 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         return target.tasks.create("autoSourcesTask", Jar::class.java) {
             archiveClassifier.set("sources")
             if (target.isAndroid) {
-                val android = target.extensions.getByName("android") as BaseAppModuleExtension
+                val android = target.extensions.getByName("android") as BaseExtension
                 from(android.sourceSets["main"].java.srcDirs)
             } else {
                 val sourceSets = target.extensions.getByName("sourceSets") as SourceSetContainer
