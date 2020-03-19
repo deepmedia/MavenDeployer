@@ -22,7 +22,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.1.4")
+        classpath("com.otaliastudios.tools:publisher:0.1.5")
     }
 }
 ```
