@@ -2,8 +2,6 @@
 [![Release](https://img.shields.io/github/release/natario1/MavenPublisher.svg)](https://github.com/natario1/MavenPublisher/releases)
 [![Issues](https://img.shields.io/github/issues-raw/natario1/MavenPublisher.svg)](https://github.com/natario1/MavenPublisher/issues)
 
-&#10240;  <!-- Hack to add whitespace -->
-
 *Need support, consulting, or have any other business-related question? Feel free to <a href="mailto:mat.iavarone@gmail.com">get in touch</a>.*
 
 *Like the project, make profit from it, or simply want to thank back? Please consider [sponsoring me](https://github.com/sponsors/natario1)!*
@@ -29,6 +27,8 @@ buildscript {
 
 The publisher plugin uses an older version of itself to publish itself into Bintray's JCenter.
 This means that you can check the plugin source code to see an example of how to use it.
+
+For more examples, please take a look at [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
 
 ## Usage
 
