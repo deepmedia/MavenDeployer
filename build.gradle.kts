@@ -1,13 +1,10 @@
 buildscript {
     repositories {
+        maven("publisher/build/prebuilt")
         jcenter()
         google()
-        maven {
-            setUrl("https://dl.bintray.com/natario/tools")
-        }
     }
     dependencies {
-        // classpath("org.jetbrains.dokka:dokka-gradle-plugin:0.9.17")
         classpath("com.otaliastudios.tools:publisher:0.1.5")
     }
 }

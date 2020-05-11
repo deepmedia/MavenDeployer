@@ -9,7 +9,7 @@
 # MavenPublisher
 
 A lightweight, handy tool for publishing your maven packages (for example, Android AARs or Java JARs)
-to different kinds of repositories. Currently, only [Bintray](https://bintray.com) is supported.
+to different kinds of repositories. Currently, [Bintray](https://bintray.com) and local maven repositories are supported.
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
@@ -20,7 +20,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.1.5")
+        classpath("com.otaliastudios.tools:publisher:0.2.0")
     }
 }
 ```
@@ -105,6 +105,30 @@ The publication name can be set in the configuration, but is typically chosen by
 publisher implementation.
 
 For example, the bintray publisher will add a task named `:publishToBintray`.
+
+## Local repository publisher
+
+To apply the plugin, declare it in your build script with the `maven-publisher-local` id:
+
+```groovy
+apply plugin: 'maven-publisher-local'
+```
+
+In addition to the common configuration fields, the local publisher will ask you for a path to the
+local directory where the final package should be published. It can be set as follows:
+
+```kotlin
+publisher {
+    // Local authentication
+    directory = "build/output"
+
+    // Other configuration values
+    // ...
+}
+```
+
+If the directory is not set, the local publisher will publish into the "maven local" repository,
+typically `$USER_HOME/.m2/repository` (see [docs](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())).
 
 ## Bintray publisher
 
