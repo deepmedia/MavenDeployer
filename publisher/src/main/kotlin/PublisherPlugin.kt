@@ -75,7 +75,7 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         model.release.version = model.release.version ?:
             if (target.isAndroid) {
                 val android = target.extensions.getByName("android") as BaseExtension
-                android.defaultConfig.versionName + android.defaultConfig.versionNameSuffix
+                android.defaultConfig.versionName + (android.defaultConfig.versionNameSuffix ?: "")
             } else {
                 target.version.toString()
             }
