@@ -10,6 +10,7 @@ import java.util.*
 class BintrayPublisherPlugin : PublisherPlugin<BintrayPublisherExtension>("bintray") {
 
     override val modelClass = BintrayPublisherExtension::class
+    override val uniqueExtensionName = "bintrayPublisher"
 
     override fun addPlugins(plugins: PluginContainer) {
         super.addPlugins(plugins)

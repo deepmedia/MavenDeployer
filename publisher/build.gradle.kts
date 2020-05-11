@@ -9,6 +9,7 @@ plugins {
 
     // To publish the plugin itself...
     id("maven-publisher-bintray")
+    // id("maven-publisher-local")
 }
 
 dependencies {
@@ -33,7 +34,11 @@ publisher {
     project.url = "https://github.com/natario1/MavenPublisher"
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
     project.addLicense(PublisherExtension.License.APACHE_2_0)
-    release.version = "0.1.5"
+    release.version = "0.2.0"
     release.setSources(PublisherExtension.Release.SOURCES_AUTO)
     release.setDocs(PublisherExtension.Release.DOCS_AUTO)
 }
+
+/* localPublisher {
+    directory = "build/prebuilt"
+} */

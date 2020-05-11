@@ -28,13 +28,18 @@ abstract class PublisherPlugin<M : PublisherExtension>(
 ) : Plugin<Project> {
 
     abstract val modelClass: KClass<M>
+    abstract val uniqueExtensionName: String
 
     private var localProperties: Properties? = null
 
     @Suppress("ControlFlowWithEmptyBody")
     override fun apply(target: Project) {
         addPlugins(target.plugins)
-        val model = target.extensions.create("publisher", modelClass.java)
+        val model = if (target.extensions.findByName("publisher") == null) {
+            target.extensions.create("publisher", modelClass.java)
+        } else {
+            target.extensions.create(uniqueExtensionName, modelClass.java)
+        }
 
         // Wait for evaluation before going on, as for instance components
         // are only created in the evaluation phase.
