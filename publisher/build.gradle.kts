@@ -34,7 +34,7 @@ publisher {
     project.url = "https://github.com/natario1/MavenPublisher"
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
     project.addLicense(PublisherExtension.License.APACHE_2_0)
-    release.version = "0.2.0"
+    release.version = "0.2.1"
     release.setSources(PublisherExtension.Release.SOURCES_AUTO)
     release.setDocs(PublisherExtension.Release.DOCS_AUTO)
 }

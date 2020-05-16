@@ -83,6 +83,9 @@ publisher {
 
     // Publication name. Default value depends on the publisher implementation.
     publication = "bintray"
+
+    // SoftwareComponent name. Defaults to "release" for android projects, "java" instead.
+    component = "java"
 }
 ```
 

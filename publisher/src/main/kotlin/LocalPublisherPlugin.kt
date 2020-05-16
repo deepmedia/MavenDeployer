@@ -18,8 +18,8 @@ class LocalPublisherPlugin : PublisherPlugin<LocalPublisherExtension>("local") {
         checkModelField(target, model.directory, "directory", false)
     }
 
-    override fun createPublication(target: Project, model: LocalPublisherExtension, component: String) {
-        super.createPublication(target, model, component)
+    override fun createPublication(target: Project, model: LocalPublisherExtension) {
+        super.createPublication(target, model)
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.repositories {
             if (model.directory != null) {
