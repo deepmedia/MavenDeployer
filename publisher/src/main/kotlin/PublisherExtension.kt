@@ -10,6 +10,7 @@ import org.gradle.api.tasks.bundling.Jar
 abstract class PublisherExtension {
 
     var publication: String? = null
+    var component: String? = null
 
     open class Auth
     open val auth: Auth = Auth()

@@ -33,8 +33,8 @@ class BintrayPublisherPlugin : PublisherPlugin<BintrayPublisherExtension>("bintr
         checkModelField(target, model.auth.repo, "auth.repo", false)
     }
 
-    override fun createPublication(target: Project, model: BintrayPublisherExtension, component: String) {
-        super.createPublication(target, model, component)
+    override fun createPublication(target: Project, model: BintrayPublisherExtension) {
+        super.createPublication(target, model)
 
         // I think the bintray plugin needs these three to work properly.
         val base = target.convention.getPlugin(BasePluginConvention::class.java)

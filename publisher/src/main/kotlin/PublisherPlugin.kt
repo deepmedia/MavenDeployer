@@ -38,6 +38,9 @@ abstract class PublisherPlugin<M : PublisherExtension>(
         val model = if (target.extensions.findByName("publisher") == null) {
             target.extensions.create("publisher", modelClass.java)
         } else {
+            // TODO not the best idea. Use a single publisher extension with named internal objects
+            //  that will match different plugin implementations. In ADDITION, single plugins might
+            //  also create a uniqueExtension for simplicity.
             target.extensions.create(uniqueExtensionName, modelClass.java)
         }
 
@@ -48,16 +51,8 @@ abstract class PublisherPlugin<M : PublisherExtension>(
             fillModel(target, model)
             checkModel(target, model)
 
-            // Create a maven publication.
-            if (target.isAndroidLibrary) {
-                createPublication(target, model, "release")
-            } else if (!target.isAndroid) {
-                createPublication(target, model, "java")
-            } else {
-                // Not an android library, but has some android plugin...
-                // Do nothing for now.
-            }
-            // Create publishing tasks.
+            // Create a maven publication and publishing tasks.
+            createPublication(target, model)
             createPublishingTasks(target, model)
         }
     }
@@ -69,6 +64,10 @@ abstract class PublisherPlugin<M : PublisherExtension>(
     protected open fun fillModel(target: Project, model: M) {
         // Add defaults
         model.publication = model.publication ?: defaultPublication
+        model.component = model.component ?: when {
+            target.isAndroidLibrary -> "release"
+            else -> "java"
+        }
         model.project.name = model.project.name ?: target.rootProject.name
         model.project.group = model.project.group ?: target.group.toString()
         val base = target.convention.getPlugin(BasePluginConvention::class.java)
@@ -119,11 +118,11 @@ abstract class PublisherPlugin<M : PublisherExtension>(
 
     // https://developer.android.com/studio/build/maven-publish-plugin
     @Suppress("UnstableApiUsage")
-    protected open fun createPublication(target: Project, model: M, component: String) {
+    protected open fun createPublication(target: Project, model: M) {
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {
             register(model.publication!!, MavenPublication::class) {
-                from(target.components[component])
+                from(target.components[model.component!!])
                 model.release.sources?.let { artifact(it) }
                 model.release.docs?.let { artifact(it) }
                 groupId = model.project.group!!
