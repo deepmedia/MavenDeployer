@@ -1,12 +1,7 @@
-package com.otaliastudios.tools.publisher
+package com.otaliastudios.tools.publisher.deprecated
 
-import com.jfrog.bintray.gradle.BintrayExtension
 import org.gradle.api.Project
-import org.gradle.api.plugins.BasePluginConvention
-import org.gradle.api.plugins.PluginContainer
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.kotlin.dsl.delegateClosureOf
-import java.util.*
 
 class LocalPublisherPlugin : PublisherPlugin<LocalPublisherExtension>("local") {
 

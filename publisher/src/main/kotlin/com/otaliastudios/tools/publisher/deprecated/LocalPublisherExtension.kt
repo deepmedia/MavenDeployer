@@ -1,4 +1,6 @@
-package com.otaliastudios.tools.publisher
+package com.otaliastudios.tools.publisher.deprecated
+
+import com.otaliastudios.tools.publisher.deprecated.PublisherExtension
 
 /**
  * Extension used by [LocalPublisherPlugin].
