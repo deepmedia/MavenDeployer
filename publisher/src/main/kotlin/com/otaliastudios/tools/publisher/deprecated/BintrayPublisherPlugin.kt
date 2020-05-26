@@ -1,4 +1,4 @@
-package com.otaliastudios.tools.publisher
+package com.otaliastudios.tools.publisher.deprecated
 
 import com.jfrog.bintray.gradle.BintrayExtension
 import org.gradle.api.Project

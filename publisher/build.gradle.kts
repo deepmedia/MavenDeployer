@@ -2,7 +2,7 @@
  * Copyright (c) 2020 Otalia Studios. Author: Mattia Iavarone.
  */
 
-import com.otaliastudios.tools.publisher.PublisherExtension
+import com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension
 
 plugins {
     `kotlin-dsl`
@@ -33,10 +33,10 @@ publisher {
     project.group = "com.otaliastudios.tools"
     project.url = "https://github.com/natario1/MavenPublisher"
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
-    project.addLicense(PublisherExtension.License.APACHE_2_0)
+    project.addLicense(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.License.APACHE_2_0)
     release.version = "0.2.1"
-    release.setSources(PublisherExtension.Release.SOURCES_AUTO)
-    release.setDocs(PublisherExtension.Release.DOCS_AUTO)
+    release.setSources(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.Release.SOURCES_AUTO)
+    release.setDocs(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.Release.DOCS_AUTO)
 }
 
 /* localPublisher {

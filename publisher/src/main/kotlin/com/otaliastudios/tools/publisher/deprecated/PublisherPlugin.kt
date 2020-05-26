@@ -1,8 +1,9 @@
-package com.otaliastudios.tools.publisher
+package com.otaliastudios.tools.publisher.deprecated
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
+import com.otaliastudios.tools.publisher.common.Release
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -88,10 +89,10 @@ abstract class PublisherPlugin<M : PublisherExtension>(
                 "${model.project.name!!} ${model.release.vcsTag!!}"
 
         // Auto-sources and auto-docs support
-        if (model.release.sources == PublisherExtension.Release.SOURCES_AUTO) {
+        if (model.release.sources == Release.SOURCES_AUTO) {
             model.release.setSources(createSourcesJar(target))
         }
-        if (model.release.docs == PublisherExtension.Release.DOCS_AUTO) {
+        if (model.release.docs == Release.DOCS_AUTO) {
             model.release.setDocs(if (target.isKotlin) {
                 createDocsKotlinJar(target)
             } else {
