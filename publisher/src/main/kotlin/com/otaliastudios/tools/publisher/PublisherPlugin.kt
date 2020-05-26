@@ -8,11 +8,14 @@ import com.otaliastudios.tools.publisher.common.Release
 import com.otaliastudios.tools.publisher.local.LocalPublicationHandler
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.register
+import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
 
@@ -33,11 +36,14 @@ open class PublisherPlugin : Plugin<Project> {
         target.afterEvaluate {
             val publications = extension.publications
             val default = extension as Publication
-            publications.forEach { publication ->
+            val tasks = publications.map { publication ->
                 val handler = handlers.first { it.ownsPublication(publication.name) }
                 fillPublication(target, publication, default, handler)
                 checkPublication(target, publication, handler)
                 createPublicationTask(target, publication, handler)
+            }
+            target.tasks.register("publishAll") {
+                dependsOn(*tasks.toTypedArray())
             }
         }
     }
@@ -45,7 +51,8 @@ open class PublisherPlugin : Plugin<Project> {
     private fun fillPublication(target: Project, publication: Publication, default: Publication, handler: PublicationHandler) {
         publication.component = publication.component ?: default.component ?: when {
             target.isAndroidLibrary -> "release"
-            else -> "java"
+            target.isJava -> "java"
+            else -> throw IllegalArgumentException("Project is not a java project, so we can't infer the component attribute.")
         }
 
         // Project data
@@ -94,7 +101,7 @@ open class PublisherPlugin : Plugin<Project> {
 
     // https://developer.android.com/studio/build/maven-publish-plugin
     @Suppress("UnstableApiUsage")
-    private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler) {
+    private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler): TaskProvider<Task> {
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {
             register(publication.name, MavenPublication::class) {
@@ -126,7 +133,7 @@ open class PublisherPlugin : Plugin<Project> {
         }
 
         val tasks = handler.createPublicationTasks(target, publication)
-        target.tasks.register("publishTo${publication.name}") {
+        return target.tasks.register("publishTo${publication.name}") {
             dependsOn(*tasks.toList().toTypedArray())
         }
     }

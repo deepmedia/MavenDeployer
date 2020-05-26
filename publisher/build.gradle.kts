@@ -2,14 +2,12 @@
  * Copyright (c) 2020 Otalia Studios. Author: Mattia Iavarone.
  */
 
-import com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension
+import com.otaliastudios.tools.publisher.common.*
 
 plugins {
     `kotlin-dsl`
-
     // To publish the plugin itself...
-    id("maven-publisher-bintray")
-    // id("maven-publisher-local")
+    id("com.otaliastudios.tools.publisher")
 }
 
 dependencies {
@@ -25,20 +23,23 @@ dependencies {
 // To publish the plugin itself...
 
 publisher {
-    auth.user = "BINTRAY_USER"
-    auth.key = "BINTRAY_KEY"
-    auth.repo = "BINTRAY_REPO"
     project.artifact = "publisher"
     project.description = "A lightweight, handy tool for publishing maven packages to different kinds of repositories"
     project.group = "com.otaliastudios.tools"
     project.url = "https://github.com/natario1/MavenPublisher"
     project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
-    project.addLicense(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.License.APACHE_2_0)
-    release.version = "0.2.1"
-    release.setSources(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.Release.SOURCES_AUTO)
-    release.setDocs(com.otaliastudios.tools.publisher.com.otaliastudios.tools.publisher.PublisherExtension.Release.DOCS_AUTO)
-}
+    project.addLicense(License.APACHE_2_0)
+    release.version = "0.3.0"
+    release.setSources(Release.SOURCES_AUTO)
+    release.setDocs(Release.DOCS_AUTO)
 
-/* localPublisher {
-    directory = "build/prebuilt"
-} */
+    bintray {
+        auth.user = "BINTRAY_USER"
+        auth.key = "BINTRAY_KEY"
+        auth.repo = "BINTRAY_REPO"
+    }
+
+    directory {
+        directory = "build/prebuilt"
+    }
+}
