@@ -20,7 +20,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.2.0")
+        classpath("com.otaliastudios.tools:publisher:0.3.0")
     }
 }
 ```
@@ -32,10 +32,17 @@ For more examples, please take a look at [natario1/Firestore](https://github.com
 
 ## Usage
 
+To apply the plugin, declare it in your build script with the `com.otaliastudios.tools.publisher` id:
+
+```groovy
+apply plugin: 'com.otaliastudios.tools.publisher'
+```
+
 ### Base Configuration
 
-All publisher plugins are configured with the same common fields, although specific publisher
-implementations can have extra fields (for example, for authentication).
+All publishers are configured with the same common fields, although specific publisher
+implementations can have extra fields (for example, for authentication). The common configuration
+is specified at the root level of the `publisher` block:
 
 ```kotlin
 publisher {
@@ -81,11 +88,30 @@ publisher {
     release.setDocs(Release.DOCS_AUTO) // create a docs Jar
     release.setDocs(dokkaJar.get())
 
-    // Publication name. Default value depends on the publisher implementation.
-    publication = "bintray"
-
     // SoftwareComponent name. Defaults to "release" for android projects, "java" instead.
     component = "java"
+}
+```
+
+Actual publishers can then be registered in this block by using their respective functions,
+for example:
+
+
+```kotlin
+publisher {
+    // Common configuration...
+    project.name = "Project name"
+    project.description = "Project description"
+
+    bintray {
+        // Override some fields
+        project.name = "Project name for bintray"
+    }
+
+    directory {
+        // Override some fields
+        project.description = "Project description for local directory"
+    }
 }
 ```
 
@@ -104,56 +130,81 @@ The publisher will use this key and look for the value as follows:
 ### Publication
 
 The publisher plugin will add a task named `:publishTo` followed by the publication name.
-The publication name can be set in the configuration, but is typically chosen by the
-publisher implementation.
+The publication name depends on the publisher being used (for example, bintray) and the name
+that is passed to the configuration. For example:
 
-For example, the bintray publisher will add a task named `:publishToBintray`.
+```kotlin
+publisher {
+    // Common configuration ...
+
+    bintray {
+        // Bintray onfiguration...
+    }
+    bintray("foo") {
+        // Bintray configuration for foo...
+    }
+    bintray("bar") {
+        // Bintray configuration for bar...
+    }
+    directory {
+        // Local dir configuration...
+    }
+    directory("abc") {
+        // Local dir configuration...
+    }
+}
+```
+
+In the example above, the following tasks will be available:
+
+- `:publishToBintray`: publishes the default bintray configuration
+- `:publishToBintrayFoo`: publishes the `foo` bintray configuration
+- `:publishToBintrayBar`: publishes the `bar` bintray configuration
+- `:publishToDirectory`: publishes the default directory configuration
+- `:publishToDirectoryAbc`: publishes the `abc` bintray configuration
+- `:publishAll`: publishes everything
 
 ## Local repository publisher
-
-To apply the plugin, declare it in your build script with the `maven-publisher-local` id:
-
-```groovy
-apply plugin: 'maven-publisher-local'
-```
 
 In addition to the common configuration fields, the local publisher will ask you for a path to the
 local directory where the final package should be published. It can be set as follows:
 
 ```kotlin
 publisher {
-    // Local authentication
-    directory = "build/output"
-
-    // Other configuration values
-    // ...
+    // Common configuration...
+    directory {
+        // Directory configuration...
+        directory = "build/output"
+    }
 }
 ```
+
+As described earlier, all the configuration fields that are set in the `directory` block will override
+the root level values.
 
 If the directory is not set, the local publisher will publish into the "maven local" repository,
 typically `$USER_HOME/.m2/repository` (see [docs](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())).
 
 ## Bintray publisher
 
-To apply the plugin, declare it in your build script with the `maven-publisher-bintray` id:
-
-```groovy
-apply plugin: 'maven-publisher-bintray'
-```
-
 In addition to the common configuration fields, to authenticate to Bintray, you will need to pass
 a user name, a user key and the Bintray repo name as follows:
 
 ```kotlin
 publisher {
-    // Bintray authentication
-    auth.user = "BINTRAY_USER" // defaults to "auth.user"
-    auth.key = "BINTRAY_KEY" // defaults to "auth.key"
-    auth.repo = "BINTRAY_REPO" // defaults to "auth.repo"
-    // Other configuration values
-    // ...
+    // Common configuration...
+    bintray {
+        // Bintray configuration...
+        auth.user = "BINTRAY_USER" // defaults to "auth.user"
+        auth.key = "BINTRAY_KEY" // defaults to "auth.key"
+        auth.repo = "BINTRAY_REPO" // defaults to "auth.repo"
+        dryRun = false // true for a dry-run publication for testing
+    }
 }
 ```
+
+As described earlier, all the configuration fields that are set in the `bintray` block will override
+the root level values.
 
 Note that the `auth` values are [Secret values](#secret-values), so instead of passing the real
 value in plain text, a key (to an environment variable or local property) should be passed.
