@@ -70,7 +70,11 @@ open class PublisherPlugin : Plugin<Project> {
         publication.project.vcsUrl = publication.project.vcsUrl
             ?: default.project.vcsUrl ?: publication.project.url ?: default.project.url
         publication.project.packaging = publication.project.packaging
-            ?: default.project.packaging ?: if (target.isAndroidLibrary) "aar" else null
+            ?: default.project.packaging ?: when {
+                publication.publication != null -> null // we'll use the MavenPublication packaging
+                target.isAndroidLibrary -> "aar"
+                else -> null
+            }
 
         // Release data
         publication.release.version = publication.release.version
