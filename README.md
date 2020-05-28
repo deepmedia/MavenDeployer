@@ -8,8 +8,8 @@
 
 # MavenPublisher
 
-A lightweight, handy tool for publishing your maven packages (for example, Android AARs or Java JARs)
-to different kinds of repositories. Currently, [Bintray](https://bintray.com) and local maven repositories are supported.
+A lightweight, handy tool for publishing your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
+to different kinds of maven repositories. Currently, [Bintray](https://bintray.com) and local directories are supported.
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
@@ -20,7 +20,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.3.1")
+        classpath("com.otaliastudios.tools:publisher:0.3.2")
     }
 }
 ```
@@ -28,7 +28,7 @@ buildscript {
 The publisher plugin uses an older version of itself to publish itself into Bintray's JCenter.
 This means that you can check the plugin source code to see an example of how to use it.
 
-For more examples, please take a look at [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
+For more examples, please take a look at [natario1/Egloo](https://github.com/natario1/Egloo), [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
 
 ## Usage
 
@@ -87,15 +87,11 @@ publisher {
     // Release docs
     release.setDocs(Release.DOCS_AUTO) // create a docs Jar
     release.setDocs(dokkaJar.get())
-
-    // SoftwareComponent name. Defaults to "release" for android projects, "java" instead.
-    component = "java"
 }
 ```
 
 Actual publishers can then be registered in this block by using their respective functions,
 for example:
-
 
 ```kotlin
 publisher {
@@ -104,16 +100,28 @@ publisher {
     project.description = "Project description"
 
     bintray {
-        // Override some fields
+        // Override some fields or add missing ones
         project.name = "Project name for bintray"
+        release.version = "1.0.0-nightly"
     }
 
     directory {
-        // Override some fields
+        // Override some fields or add missing ones
         project.description = "Project description for local directory"
+        release.version = "1.0.0-rc1"
     }
 }
 ```
+
+### Specifying the publication contents
+
+You have two options to specify the publication contents. MavenPublisher will try to infer default
+values based on the currently applied plugin.
+
+- `publisher.component` : specifies the name of a `SoftwareComponent`. Defaults to "release" for Android projects and "java" for java projects, both of which create components for you.
+- `publisher.publication` : specifies the name of a `MavenPublication`. Defaults to null. When this is set, we'll use the publication's `SoftwareComponent` and modify the other publication fields to match the publisher configuration.
+
+Typically, you should specify either one or the other.
 
 ### Secret values
 
@@ -127,7 +135,7 @@ The publisher will use this key and look for the value as follows:
 - Search with `project.findProperty(key)`
 - Search in `local.properties` file, if present
 
-### Publication
+### Publication tasks
 
 The publisher plugin will add a task named `:publishTo` followed by the publication name.
 The publication name depends on the publisher being used (for example, bintray) and the name
@@ -162,6 +170,8 @@ In the example above, the following tasks will be available:
 - `:publishToBintrayBar`: publishes the `bar` bintray configuration
 - `:publishToDirectory`: publishes the default directory configuration
 - `:publishToDirectoryAbc`: publishes the `abc` bintray configuration
+- `:publishAllBintray`: publishes all "bintray" publications
+- `:publishAllDirectory`: publishes all "directory" publications
 - `:publishAll`: publishes everything
 
 ## Local repository publisher
@@ -176,6 +186,9 @@ publisher {
         // Directory configuration...
         directory = "build/output"
     }
+
+    // If needed, you can add other named publications.
+    directory("other") { ... }
 }
 ```
 
@@ -200,6 +213,9 @@ publisher {
         auth.repo = "BINTRAY_REPO" // defaults to "auth.repo"
         dryRun = false // true for a dry-run publication for testing
     }
+
+    // If needed, you can add other named publications.
+    bintray("other") { ... }
 }
 ```
 
