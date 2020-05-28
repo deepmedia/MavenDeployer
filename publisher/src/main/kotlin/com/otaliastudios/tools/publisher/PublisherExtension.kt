@@ -9,6 +9,7 @@ import org.gradle.api.NamedDomainObjectContainer
 
 open class PublisherExtension : Publication by DefaultPublication("default") {
     internal lateinit var publications: NamedDomainObjectContainer<Publication>
+    internal lateinit var configuredPublications: NamedDomainObjectContainer<Publication>
 
     fun bintray(name: String = BintrayPublicationHandler.PREFIX, configure: BintrayPublication.() -> Unit)
             = add(BintrayPublicationHandler.PREFIX, name, configure)
@@ -22,5 +23,6 @@ open class PublisherExtension : Publication by DefaultPublication("default") {
         } else name
         val publication = publications.create(publicationName) as P
         configure.invoke(publication)
+        configuredPublications.add(publication)
     }
 }

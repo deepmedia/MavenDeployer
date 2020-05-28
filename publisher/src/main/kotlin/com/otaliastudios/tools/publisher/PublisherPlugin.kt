@@ -3,6 +3,7 @@
 package com.otaliastudios.tools.publisher
 
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
 import com.otaliastudios.tools.publisher.common.Release
 import com.otaliastudios.tools.publisher.local.LocalPublicationHandler
@@ -14,7 +15,9 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.registering
 import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
@@ -28,22 +31,21 @@ open class PublisherPlugin : Plugin<Project> {
         target.plugins.apply("maven-publish")
         handlers.forEach { it.applyPlugins(target) }
 
+        val task = target.tasks.register("publishAll")
         val extension = target.extensions.create("publisher", PublisherExtension::class.java)
         extension.publications = target.container(Publication::class.java) { name ->
             handlers.first { it.ownsPublication(name) }.createPublication(name)
         }
-
-        target.afterEvaluate {
-            val publications = extension.publications
-            val default = extension as Publication
-            val tasks = publications.map { publication ->
-                val handler = handlers.first { it.ownsPublication(publication.name) }
+        extension.configuredPublications = target.container(Publication::class.java)
+        extension.configuredPublications.all {
+            val publication = this
+            val handler = handlers.first { it.ownsPublication(publication.name) }
+            target.afterEvaluate {
+                val default = extension as Publication
                 fillPublication(target, publication, default, handler)
                 checkPublication(target, publication, handler)
-                createPublicationTask(target, publication, handler)
-            }
-            target.tasks.register("publishAll") {
-                dependsOn(*tasks.toTypedArray())
+                val pubTask = createPublicationTask(target, publication, handler)
+                task.dependsOn(pubTask)
             }
         }
     }
