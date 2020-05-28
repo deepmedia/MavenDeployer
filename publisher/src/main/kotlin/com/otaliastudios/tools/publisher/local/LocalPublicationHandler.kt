@@ -1,27 +1,30 @@
 package com.otaliastudios.tools.publisher.local
 
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.otaliastudios.tools.publisher.Publication
 import com.otaliastudios.tools.publisher.PublicationHandler
+import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 
-internal class LocalPublicationHandler : PublicationHandler() {
+internal class LocalPublicationHandler(target: Project) : PublicationHandler(target) {
 
     companion object {
         internal const val PREFIX = "directory"
     }
 
-    override fun applyPlugins(target: Project) = Unit
+    private val allTask = target.tasks.register("publishAll$PREFIX")
+
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
     override fun createPublication(name: String) = LocalPublication(name)
-    override fun fillPublication(target: Project, publication: Publication) = Unit
+    override fun fillPublication(publication: Publication) = Unit
 
-    override fun checkPublication(target: Project, publication: Publication) {
+    override fun checkPublication(publication: Publication) {
         publication as LocalPublication
-        checkPublicationField(target, publication.directory, "directory", false)
+        checkPublicationField(publication.directory, "directory", false)
     }
 
-    override fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String> {
+    override fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String> {
         publication as LocalPublication
         val mavenRepository = publication.name // whatever
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
@@ -37,6 +40,8 @@ internal class LocalPublicationHandler : PublicationHandler() {
                 }
             }
         }
-        return setOf("publish${mavenPublication.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository")
+        val publishTask = "publish${mavenPublication.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository"
+        allTask.dependsOn(publishTask)
+        return setOf(publishTask)
     }
 }

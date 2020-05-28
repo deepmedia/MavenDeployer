@@ -1,23 +1,23 @@
 package com.otaliastudios.tools.publisher.bintray
 
-import com.jfrog.bintray.gradle.BintrayExtension
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
 import com.otaliastudios.tools.publisher.Publication
 import com.otaliastudios.tools.publisher.PublicationHandler
 import org.gradle.api.Project
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
-import org.gradle.kotlin.dsl.delegateClosureOf
 import java.util.*
 
-internal class BintrayPublicationHandler : PublicationHandler() {
+internal class BintrayPublicationHandler(target: Project) : PublicationHandler(target) {
 
     companion object {
         internal const val PREFIX = "bintray"
     }
 
-    override fun applyPlugins(target: Project) {
+    private val allTask = target.tasks.register("publishAll$PREFIX")
+
+    init {
         target.plugins.apply("com.jfrog.bintray")
     }
 
@@ -25,23 +25,23 @@ internal class BintrayPublicationHandler : PublicationHandler() {
 
     override fun createPublication(name: String) = BintrayPublication(name)
 
-    override fun fillPublication(target: Project, publication: Publication) {
+    override fun fillPublication(publication: Publication) {
         publication as BintrayPublication
-        publication.auth.user = findSecret(target, publication.auth.user ?: "auth.repo")
-        publication.auth.key = findSecret(target, publication.auth.key ?: "auth.repo")
-        publication.auth.repo = findSecret(target, publication.auth.repo ?: "auth.repo")
+        publication.auth.user = findSecret(publication.auth.user ?: "auth.repo")
+        publication.auth.key = findSecret(publication.auth.key ?: "auth.repo")
+        publication.auth.repo = findSecret(publication.auth.repo ?: "auth.repo")
     }
 
-    override fun checkPublication(target: Project, publication: Publication) {
+    override fun checkPublication(publication: Publication) {
         publication as BintrayPublication
         // The only nullable and important fields at this point are auth* fields, but we want
         // to be tolerant on them as they might not be available e.g. on CI forks. Just warn.
-        checkPublicationField(target, publication.auth.user, "auth.user", false)
-        checkPublicationField(target, publication.auth.key, "auth.key", false)
-        checkPublicationField(target, publication.auth.repo, "auth.repo", false)
+        checkPublicationField(publication.auth.user, "auth.user", false)
+        checkPublicationField(publication.auth.key, "auth.key", false)
+        checkPublicationField(publication.auth.repo, "auth.repo", false)
     }
 
-    override fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String> {
+    override fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String> {
         publication as BintrayPublication
 
         // I think the bintray plugin needs these three to work properly.
@@ -84,7 +84,7 @@ internal class BintrayPublicationHandler : PublicationHandler() {
                     bintray.repoName, bintray.packageName, bintray.versionName, bintray)
             }
         }
-
+        allTask.dependsOn(bintray.name)
         return setOf(bintray.name)
     }
 

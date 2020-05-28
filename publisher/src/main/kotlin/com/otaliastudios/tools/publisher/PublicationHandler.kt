@@ -5,22 +5,20 @@ import org.gradle.api.logging.LogLevel
 import java.io.FileInputStream
 import java.util.*
 
-internal abstract class PublicationHandler {
-
-    abstract fun applyPlugins(target: Project)
+internal abstract class PublicationHandler(protected val target: Project) {
 
     abstract fun ownsPublication(name: String): Boolean
 
     abstract fun createPublication(name: String): Publication
 
-    abstract fun fillPublication(target: Project, publication: Publication)
+    abstract fun fillPublication(publication: Publication)
 
-    abstract fun checkPublication(target: Project, publication: Publication)
+    abstract fun checkPublication(publication: Publication)
 
-    abstract fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String>
+    abstract fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String>
 
     @Suppress("SameParameterValue")
-    protected fun checkPublicationField(target: Project, value: Any?, field: String, fatal: Boolean) {
+    protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean) {
         if (value == null) {
             val message = "publisher.$field is not set."
             if (fatal) {
@@ -33,7 +31,7 @@ internal abstract class PublicationHandler {
 
     private var localProperties: Properties? = null
 
-    protected fun findSecret(target: Project, key: String): String? {
+    protected fun findSecret(key: String): String? {
         // Try with environmental variable.
         val env: String? = System.getenv(key)
         if (!env.isNullOrEmpty()) return env

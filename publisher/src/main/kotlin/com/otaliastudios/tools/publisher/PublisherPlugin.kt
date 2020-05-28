@@ -15,21 +15,17 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.get
-import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.registering
 import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
 
-    private val handlers = listOf(
-        BintrayPublicationHandler(),
-        LocalPublicationHandler()
-    )
+    private val handlers = mutableListOf<PublicationHandler>()
 
     override fun apply(target: Project) {
         target.plugins.apply("maven-publish")
-        handlers.forEach { it.applyPlugins(target) }
+        handlers.add(BintrayPublicationHandler(target))
+        handlers.add(LocalPublicationHandler(target))
 
         val task = target.tasks.register("publishAll")
         val extension = target.extensions.create("publisher", PublisherExtension::class.java)
@@ -100,11 +96,11 @@ open class PublisherPlugin : Plugin<Project> {
         }
 
         // Give handler a chance
-        handler.fillPublication(target, publication)
+        handler.fillPublication(publication)
     }
 
     private fun checkPublication(target: Project, publication: Publication, handler: PublicationHandler) {
-        handler.checkPublication(target, publication)
+        handler.checkPublication(publication)
     }
 
     // https://developer.android.com/studio/build/maven-publish-plugin
@@ -124,7 +120,7 @@ open class PublisherPlugin : Plugin<Project> {
         }
 
         val mavenPublicationName = publication.publication ?: publication.name
-        val tasks = handler.createPublicationTasks(target, publication, mavenPublicationName)
+        val tasks = handler.createPublicationTasks(publication, mavenPublicationName)
         return target.tasks.register("publishTo${publication.name}") {
             dependsOn(*tasks.toList().toTypedArray())
         }
