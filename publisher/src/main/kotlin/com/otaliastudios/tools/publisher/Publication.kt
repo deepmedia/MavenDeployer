@@ -7,6 +7,7 @@ import org.gradle.api.Named
 
 interface Publication : Named {
     var component: String?
+    var publication: String?
     val auth: Auth
     val project: Project
     val release: Release

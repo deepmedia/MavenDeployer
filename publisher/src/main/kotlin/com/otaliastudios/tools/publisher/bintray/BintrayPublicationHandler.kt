@@ -38,7 +38,7 @@ internal class BintrayPublicationHandler : PublicationHandler() {
         checkPublicationField(target, publication.auth.repo, "auth.repo", false)
     }
 
-    override fun createPublicationTasks(target: Project, publication: Publication): Iterable<String> {
+    override fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String> {
         publication as BintrayPublication
 
         // I think the bintray plugin needs these three to work properly.
@@ -49,7 +49,7 @@ internal class BintrayPublicationHandler : PublicationHandler() {
 
         // Configure the plugin with the publication data.
         val bintray = target.extensions.getByType(BintrayExtension::class.java)
-        bintray.setPublications(publication.name) // the maven publication name
+        bintray.setPublications(mavenPublication)
         bintray.user = publication.auth.user ?: ""
         bintray.key = publication.auth.key ?: ""
         bintray.override = true
