@@ -21,7 +21,7 @@ internal class LocalPublicationHandler : PublicationHandler() {
         checkPublicationField(target, publication.directory, "directory", false)
     }
 
-    override fun createPublicationTasks(target: Project, publication: Publication): Iterable<String> {
+    override fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String> {
         publication as LocalPublication
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.repositories {
@@ -36,6 +36,6 @@ internal class LocalPublicationHandler : PublicationHandler() {
                 }
             }
         }
-        return setOf("publish${publication.name.capitalize()}PublicationTo${publication.name.capitalize()}Repository")
+        return setOf("publish${mavenPublication}PublicationTo${publication.name.capitalize()}Repository")
     }
 }

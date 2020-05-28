@@ -40,7 +40,7 @@ open class PublisherPlugin : Plugin<Project> {
         extension.configuredPublications.all {
             val publication = this
             val handler = handlers.first { it.ownsPublication(publication.name) }
-            target.afterEvaluate {
+            target.afterEvaluate { // For components to be created
                 val default = extension as Publication
                 fillPublication(target, publication, default, handler)
                 checkPublication(target, publication, handler)
@@ -51,9 +51,11 @@ open class PublisherPlugin : Plugin<Project> {
     }
 
     private fun fillPublication(target: Project, publication: Publication, default: Publication, handler: PublicationHandler) {
+        publication.publication = publication.publication ?: default.publication
         publication.component = publication.component ?: default.component ?: when {
             target.isAndroidLibrary -> "release"
             target.isJava -> "java"
+            publication.publication != null -> null // It's OK, we can still get the component from the publication
             else -> throw IllegalArgumentException("Project is not a java project, so we can't infer the component attribute.")
         }
 
@@ -106,37 +108,51 @@ open class PublisherPlugin : Plugin<Project> {
     private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler): TaskProvider<Task> {
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {
-            register(publication.name, MavenPublication::class) {
-                from(target.components[publication.component!!])
-                publication.release.sources?.let { artifact(it) }
-                publication.release.docs?.let { artifact(it) }
-                groupId = publication.project.group!!
-                artifactId = publication.project.artifact!!
-                version = publication.release.version!!
-                publication.project.packaging?.let { pom.packaging = it }
-                publication.project.description?.let { pom.description.set(it) }
-                publication.project.url?.let { pom.url.set(it) }
-                pom.name.set(publication.project.name!!)
-                pom.licenses {
-                    publication.project.licenses.forEach {
-                        license {
-                            name.set(it.name)
-                            url.set(it.url)
-                        }
-                    }
-                }
-                pom.scm {
-                    publication.project.vcsUrl?.let { connection.set(it) }
-                    publication.project.vcsUrl?.let { developerConnection.set(it) }
-                    publication.project.url?.let { url.set(it) }
-                    publication.release.vcsTag?.let { tag.set(it) }
+            val container = this
+            if (publication.publication != null) {
+                val maven = container[publication.publication!!]
+                configureMavenPublication(target, maven as MavenPublication, publication, owned = false)
+            } else {
+                register(publication.name, MavenPublication::class) {
+                    configureMavenPublication(target, this, publication, owned = true)
                 }
             }
         }
 
-        val tasks = handler.createPublicationTasks(target, publication)
+        val mavenPublicationName = publication.publication ?: publication.name
+        val tasks = handler.createPublicationTasks(target, publication, mavenPublicationName)
         return target.tasks.register("publishTo${publication.name}") {
             dependsOn(*tasks.toList().toTypedArray())
+        }
+    }
+
+    private fun configureMavenPublication(target: Project, maven: MavenPublication, publication: Publication, owned: Boolean) {
+        if (owned) {
+            // We have created the publication, so we must have a software component for it.
+            maven.from(target.components[publication.component!!])
+        }
+        publication.release.sources?.let { maven.artifact(it) }
+        publication.release.docs?.let { maven.artifact(it) }
+        maven.groupId = publication.project.group!!
+        maven.artifactId = publication.project.artifact!!
+        maven.version = publication.release.version!!
+        publication.project.packaging?.let { maven.pom.packaging = it }
+        publication.project.description?.let { maven.pom.description.set(it) }
+        publication.project.url?.let { maven.pom.url.set(it) }
+        maven.pom.name.set(publication.project.name!!)
+        maven.pom.licenses {
+            publication.project.licenses.forEach {
+                license {
+                    name.set(it.name)
+                    url.set(it.url)
+                }
+            }
+        }
+        maven.pom.scm {
+            publication.project.vcsUrl?.let { connection.set(it) }
+            publication.project.vcsUrl?.let { developerConnection.set(it) }
+            publication.project.url?.let { url.set(it) }
+            publication.release.vcsTag?.let { tag.set(it) }
         }
     }
 }

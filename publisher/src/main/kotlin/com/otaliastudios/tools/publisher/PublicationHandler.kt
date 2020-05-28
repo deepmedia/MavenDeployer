@@ -17,7 +17,7 @@ internal abstract class PublicationHandler {
 
     abstract fun checkPublication(target: Project, publication: Publication)
 
-    abstract fun createPublicationTasks(target: Project, publication: Publication): Iterable<String>
+    abstract fun createPublicationTasks(target: Project, publication: Publication, mavenPublication: String): Iterable<String>
 
     @Suppress("SameParameterValue")
     protected fun checkPublicationField(target: Project, value: Any?, field: String, fatal: Boolean) {
