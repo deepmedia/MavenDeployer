@@ -13,7 +13,7 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
         internal const val PREFIX = "directory"
     }
 
-    private val allTask = target.tasks.register("publishAll$PREFIX")
+    private val allTask = target.tasks.register("publishAll${PREFIX.capitalize()}")
 
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
     override fun createPublication(name: String) = LocalPublication(name)

@@ -121,7 +121,7 @@ open class PublisherPlugin : Plugin<Project> {
 
         val mavenPublicationName = publication.publication ?: publication.name
         val tasks = handler.createPublicationTasks(publication, mavenPublicationName)
-        return target.tasks.register("publishTo${publication.name}") {
+        return target.tasks.register("publishTo${publication.name.capitalize()}") {
             dependsOn(*tasks.toList().toTypedArray())
         }
     }

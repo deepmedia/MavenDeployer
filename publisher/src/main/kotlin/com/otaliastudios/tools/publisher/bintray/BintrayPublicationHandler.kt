@@ -15,7 +15,7 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
         internal const val PREFIX = "bintray"
     }
 
-    private val allTask = target.tasks.register("publishAll$PREFIX")
+    private val allTask = target.tasks.register("publishAll${PREFIX.capitalize()}")
 
     init {
         target.plugins.apply("com.jfrog.bintray")
