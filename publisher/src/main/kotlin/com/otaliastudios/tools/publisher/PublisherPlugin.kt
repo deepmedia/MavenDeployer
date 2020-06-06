@@ -14,6 +14,7 @@ import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.register
 import java.lang.IllegalArgumentException
@@ -106,22 +107,22 @@ open class PublisherPlugin : Plugin<Project> {
     // https://developer.android.com/studio/build/maven-publish-plugin
     @Suppress("UnstableApiUsage")
     private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler): TaskProvider<Task> {
+        var mavenPublication: MavenPublication? = null
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {
             val container = this
             if (publication.publication != null) {
-                val maven = container[publication.publication!!]
-                configureMavenPublication(target, maven as MavenPublication, publication, owned = false)
+                mavenPublication = container[publication.publication!!] as MavenPublication
+                configureMavenPublication(target, mavenPublication!!, publication, owned = false)
             } else {
-                register(publication.name, MavenPublication::class) {
+                mavenPublication = container.create(publication.name, MavenPublication::class) {
                     configureMavenPublication(target, this, publication, owned = true)
                 }
             }
         }
 
-        val mavenPublicationName = publication.publication ?: publication.name
-        val tasks = handler.createPublicationTasks(publication, mavenPublicationName)
-        return target.tasks.register("publishTo${publication.name}") {
+        val tasks = handler.createPublicationTasks(publication, mavenPublication!!)
+        return target.tasks.register("publishTo${publication.name.capitalize()}") {
             dependsOn(*tasks.toList().toTypedArray())
         }
     }

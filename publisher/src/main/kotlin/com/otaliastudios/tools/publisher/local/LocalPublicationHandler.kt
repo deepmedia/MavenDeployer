@@ -6,6 +6,7 @@ import com.otaliastudios.tools.publisher.PublicationHandler
 import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 
 internal class LocalPublicationHandler(target: Project) : PublicationHandler(target) {
 
@@ -13,7 +14,7 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
         internal const val PREFIX = "directory"
     }
 
-    private val allTask = target.tasks.register("publishAll$PREFIX")
+    private val allTask = target.tasks.register("publishAll${PREFIX.capitalize()}")
 
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
     override fun createPublication(name: String) = LocalPublication(name)
@@ -24,7 +25,7 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
         checkPublicationField(publication.directory, "directory", false)
     }
 
-    override fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String> {
+    override fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String> {
         publication as LocalPublication
         val mavenRepository = publication.name // whatever
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
@@ -40,7 +41,7 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
                 }
             }
         }
-        val publishTask = "publish${mavenPublication.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository"
+        val publishTask = "publish${mavenPublication.name.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository"
         allTask.dependsOn(publishTask)
         return setOf(publishTask)
     }
