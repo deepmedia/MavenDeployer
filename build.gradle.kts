@@ -5,7 +5,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.3.1")
+        classpath("com.otaliastudios.tools:publisher:0.3.3-rc2")
     }
 }
 
