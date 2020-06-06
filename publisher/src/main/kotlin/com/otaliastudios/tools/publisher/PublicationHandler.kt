@@ -2,6 +2,7 @@ package com.otaliastudios.tools.publisher
 
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.publish.maven.MavenPublication
 import java.io.FileInputStream
 import java.util.*
 
@@ -15,7 +16,7 @@ internal abstract class PublicationHandler(protected val target: Project) {
 
     abstract fun checkPublication(publication: Publication)
 
-    abstract fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String>
+    abstract fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String>
 
     @Suppress("SameParameterValue")
     protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean) {

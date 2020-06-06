@@ -6,7 +6,12 @@ import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
 import com.otaliastudios.tools.publisher.Publication
 import com.otaliastudios.tools.publisher.PublicationHandler
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
+import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
+import org.gradle.internal.impldep.org.apache.maven.Maven
 import java.util.*
 
 internal class BintrayPublicationHandler(target: Project) : PublicationHandler(target) {
@@ -41,7 +46,7 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
         checkPublicationField(publication.auth.repo, "auth.repo", false)
     }
 
-    override fun createPublicationTasks(publication: Publication, mavenPublication: String): Iterable<String> {
+    override fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String> {
         publication as BintrayPublication
 
         // I think the bintray plugin needs these three to work properly.
@@ -50,11 +55,20 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
         target.group = publication.project.group!!
         base.archivesBaseName = publication.project.artifact!!
 
+        // Hack for gradle module metadata, since bintray plugin is dumb
+        // This is a problem because we'll have a duplicate artifact for other publishers
+        mavenPublication as MavenPublicationInternal
+        val gradleModuleMetadata = mavenPublication.publishableArtifacts.find { it.extension == "module" }
+        if (gradleModuleMetadata != null) {
+            target.logger.log(LogLevel.WARN, "Found gradle module metadata. Registering it as an artifact for Bintray upload.")
+            mavenPublication.artifact(gradleModuleMetadata)
+        }
+
         // Configure the plugin with the publication data.
         // We're replicating what ProjectsEvaluatedBuildListener.groovy does in the BGP
-        val bintray = target.tasks.create("bintrayUpload${mavenPublication.capitalize()}", BintrayUploadTask::class.java)
+        val bintray = target.tasks.create("bintrayUpload${mavenPublication.name.capitalize()}", BintrayUploadTask::class.java)
         bintray.project = target
-        bintray.setPublications(mavenPublication)
+        bintray.setPublications(mavenPublication.name)
         bintray.apiUrl = "https://api.bintray.com" // BintrayUploadTask.API_URL_DEFAULT
         bintray.user = publication.auth.user ?: ""
         bintray.apiKey = publication.auth.key ?: ""
@@ -73,11 +87,11 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
         bintray.versionDesc = publication.release.description!!
         bintray.versionReleased = Date().toString()
         bintray.versionVcsTag = publication.release.vcsTag!!
-        bintray.dependsOn("publish${mavenPublication.capitalize()}PublicationToMavenLocal")
+        bintray.dependsOn("publish${mavenPublication.name.capitalize()}PublicationToMavenLocal")
 
         // Need to call BintrayPublishTask.publishVersion to mark the version as published.
         // This is the actual bintrayPublish task that we'd call in the normal extension flow.
-        val bintrayPublish = target.tasks.create("bintrayPublish${mavenPublication.capitalize()}", BintrayPublishTask::class.java)
+        val bintrayPublish = target.tasks.create("bintrayPublish${mavenPublication.name.capitalize()}", BintrayPublishTask::class.java)
         bintray.doLast {
             if (didWork) {
                 bintrayPublishMethod.invoke(bintrayPublish,
