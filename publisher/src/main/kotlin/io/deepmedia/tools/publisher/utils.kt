@@ -1,15 +1,15 @@
 @file:Suppress("UnstableApiUsage")
 
-package com.otaliastudios.tools.publisher
+package io.deepmedia.tools.publisher
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
+import io.deepmedia.tools.publisher.Publication
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.get
@@ -19,36 +19,32 @@ import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 
 
-internal fun Project.createSources(publication: Publication): Jar {
+internal fun Project.registerSourcesTask(publication: Publication): TaskProvider<Jar> {
+    check(isJava) { "Release.SOURCES_AUTO only works with Java projects." }
     val project = this
-    return tasks.create("generatePublisher${publication.name.capitalize()}Sources", Jar::class.java) {
+    return tasks.register("generatePublisher${publication.name.capitalize()}Sources", Jar::class.java) {
         archiveClassifier.set("sources")
         if (isAndroid) {
             val android = project.extensions["android"] as BaseExtension
             from(android.sourceSets["main"].java.srcDirs)
-        } else if (isJava) {
+        } else {
             val convention: JavaPluginConvention = project.convention.getPlugin()
             val sourceSet = convention.sourceSets["main"]
             from(sourceSet.allSource)
             // or: val sourceSets = project.extensions["sourceSets"] as SourceSetContainer
             // but this is safer.
-        } else {
-            throw IllegalArgumentException("Release.SOURCES_AUTO only works with Java projects.")
         }
     }
 }
 
-internal fun Project.createDocs(publication: Publication): Jar {
-    if (isKotlin) {
-        apply<DokkaPlugin>()
-        return tasks.create("generatePublisher${publication.name.capitalize()}Docs", Jar::class.java) {
-            val task = tasks["dokka"]
-            dependsOn(task)
-            archiveClassifier.set("javadoc")
-            from((task as DokkaTask).outputDirectory)
-        }
-    } else {
-        throw IllegalArgumentException("Release.DOCS_AUTO only works in kotlin projects.")
+internal fun Project.registerDocsTask(publication: Publication): TaskProvider<Jar> {
+    check(isKotlin) { "Release.DOCS_AUTO only works in kotlin projects." }
+    apply<DokkaPlugin>()
+    return tasks.register("generatePublisher${publication.name.capitalize()}Docs", Jar::class.java) {
+        val task = tasks["dokkaJavadoc"] as DokkaTask
+        dependsOn(task)
+        archiveClassifier.set("javadoc")
+        from(task.outputDirectory)
     }
 }
 

@@ -1,10 +1,10 @@
-package com.otaliastudios.tools.publisher
+package io.deepmedia.tools.publisher
 
-import com.otaliastudios.tools.publisher.bintray.BintrayPublication
-import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
-import com.otaliastudios.tools.publisher.common.DefaultPublication
-import com.otaliastudios.tools.publisher.local.LocalPublication
-import com.otaliastudios.tools.publisher.local.LocalPublicationHandler
+import io.deepmedia.tools.publisher.bintray.BintrayPublication
+import io.deepmedia.tools.publisher.bintray.BintrayPublicationHandler
+import io.deepmedia.tools.publisher.common.DefaultPublication
+import io.deepmedia.tools.publisher.local.LocalPublication
+import io.deepmedia.tools.publisher.local.LocalPublicationHandler
 import org.gradle.api.NamedDomainObjectContainer
 
 open class PublisherExtension : Publication by DefaultPublication("default") {

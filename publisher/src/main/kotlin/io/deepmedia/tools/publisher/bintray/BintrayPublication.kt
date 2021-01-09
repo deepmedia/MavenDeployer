@@ -1,6 +1,6 @@
-package com.otaliastudios.tools.publisher.bintray
+package io.deepmedia.tools.publisher.bintray
 
-import com.otaliastudios.tools.publisher.common.DefaultPublication
+import io.deepmedia.tools.publisher.common.DefaultPublication
 
 class BintrayPublication(name: String) : DefaultPublication(name) {
     var dryRun = false

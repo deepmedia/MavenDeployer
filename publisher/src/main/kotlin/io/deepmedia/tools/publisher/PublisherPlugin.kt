@@ -1,12 +1,12 @@
 @file:Suppress("UnstableApiUsage")
 
-package com.otaliastudios.tools.publisher
+package io.deepmedia.tools.publisher
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
-import com.otaliastudios.tools.publisher.common.Release
-import com.otaliastudios.tools.publisher.local.LocalPublicationHandler
+import io.deepmedia.tools.publisher.bintray.BintrayPublicationHandler
+import io.deepmedia.tools.publisher.common.Release
+import io.deepmedia.tools.publisher.local.LocalPublicationHandler
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -16,7 +16,6 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
-import org.gradle.kotlin.dsl.register
 import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
@@ -90,10 +89,10 @@ open class PublisherPlugin : Plugin<Project> {
 
         // Auto-sources and auto-docs support
         if (publication.release.sources == Release.SOURCES_AUTO) {
-            publication.release.setSources(target.createSources(publication))
+            publication.release.sources = target.registerSourcesTask(publication)
         }
         if (publication.release.docs == Release.DOCS_AUTO) {
-            publication.release.setDocs(target.createDocs(publication))
+            publication.release.docs = target.registerDocsTask(publication)
         }
 
         // Give handler a chance

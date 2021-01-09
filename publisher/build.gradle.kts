@@ -1,20 +1,16 @@
-/*
- * Copyright (c) 2020 Otalia Studios. Author: Mattia Iavarone.
- */
-
-import com.otaliastudios.tools.publisher.common.*
+import io.deepmedia.tools.publisher.common.*
 
 plugins {
     `kotlin-dsl`
     // To publish the plugin itself...
-    id("com.otaliastudios.tools.publisher")
+    id("io.deepmedia.tools.publisher")
 }
 
 dependencies {
     api("com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4") // bintray
-    api("com.android.tools.build:gradle:3.6.1") // android gradle plugin
-    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61") // kotlin gradle plugin
-    api("org.jetbrains.dokka:dokka-gradle-plugin:0.10.1") // dokka for auto docs
+    api("com.android.tools.build:gradle:4.1.1") // android gradle plugin
+    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.21") // kotlin gradle plugin
+    api("org.jetbrains.dokka:dokka-gradle-plugin:1.4.20") // dokka for auto docs
     api(gradleApi()) // gradle
     api(gradleKotlinDsl()) // not sure if needed
     api(localGroovy()) // groovy
@@ -24,14 +20,14 @@ dependencies {
 
 publisher {
     project.artifact = "publisher"
-    project.description = "A lightweight, handy tool for publishing maven packages to different kinds of repositories"
-    project.group = "com.otaliastudios.tools"
-    project.url = "https://github.com/natario1/MavenPublisher"
-    project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
+    project.description = "A lightweight, handy tool for publishing maven packages to different kinds of repositories."
+    project.group = "io.deepmedia.tools"
+    project.url = "https://github.com/deepmedia/MavenPublisher"
+    project.vcsUrl = "https://github.com/deepmedia/MavenPublisher.git"
     project.addLicense(License.APACHE_2_0)
-    release.version = "0.3.3"
-    release.setSources(Release.SOURCES_AUTO)
-    release.setDocs(Release.DOCS_AUTO)
+    release.version = "0.4.0"
+    release.sources = Release.SOURCES_AUTO
+    release.docs = Release.DOCS_AUTO
 
     bintray {
         auth.user = "BINTRAY_USER"

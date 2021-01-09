@@ -1,6 +1,6 @@
-package com.otaliastudios.tools.publisher.common
+package io.deepmedia.tools.publisher.common
 
-import com.otaliastudios.tools.publisher.Publication
+import io.deepmedia.tools.publisher.Publication
 
 open class DefaultPublication(name: String) : Publication {
     private val _name = name
