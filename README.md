@@ -1,10 +1,6 @@
-[![Build Status](https://github.com/natario1/MavenPublisher/workflows/Build/badge.svg?event=push)](https://github.com/natario1/MavenPublisher/actions)
-[![Release](https://img.shields.io/github/release/natario1/MavenPublisher.svg)](https://github.com/natario1/MavenPublisher/releases)
-[![Issues](https://img.shields.io/github/issues-raw/natario1/MavenPublisher.svg)](https://github.com/natario1/MavenPublisher/issues)
-
-*Need support, consulting, or have any other business-related question? Feel free to <a href="mailto:mat.iavarone@gmail.com">get in touch</a>.*
-
-*Like the project, make profit from it, or simply want to thank back? Please consider [sponsoring me](https://github.com/sponsors/natario1)!*
+[![Build Status](https://github.com/deepmedia/MavenPublisher/workflows/Build/badge.svg?event=push)](https://github.com/deepmedia/MavenPublisher/actions)
+[![Release](https://img.shields.io/github/release/deepmedia/MavenPublisher.svg)](https://github.com/deepmedia/MavenPublisher/releases)
+[![Issues](https://img.shields.io/github/issues-raw/deepmedia/MavenPublisher.svg)](https://github.com/deepmedia/MavenPublisher/issues)
 
 # MavenPublisher
 
@@ -20,7 +16,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.3.2")
+        classpath("io.deepmedia.tools:publisher:0.4.0")
     }
 }
 ```
@@ -32,10 +28,10 @@ For more examples, please take a look at [natario1/Egloo](https://github.com/nat
 
 ## Usage
 
-To apply the plugin, declare it in your build script with the `com.otaliastudios.tools.publisher` id:
+To apply the plugin, declare it in your build script with the `io.deepmedia.tools.publisher` id:
 
 ```groovy
-apply plugin: 'com.otaliastudios.tools.publisher'
+apply plugin: 'io.deepmedia.tools.publisher'
 ```
 
 ### Base Configuration
@@ -56,13 +52,13 @@ publisher {
     project.artifact = "publisher"
     
     // Package group id. Defaults to project's group
-    project.group = "com.otaliastudios.tools"
+    project.group = "io.deepmedia.tools"
     
     // Project url
-    project.url = "https://github.com/natario1/MavenPublisher"
+    project.url = "https://github.com/deepmedia/MavenPublisher"
     
     // Project VCS url. Defaults to project.url
-    project.vcsUrl = "https://github.com/natario1/MavenPublisher.git"
+    project.vcsUrl = "https://github.com/deepmedia/MavenPublisher.git"
     
     // Project packaging. Automatically set to AAR for Android libraries
     project.packaging = "aar"

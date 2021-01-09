@@ -1,11 +1,12 @@
 buildscript {
     repositories {
         maven("publisher/build/prebuilt")
+        maven("https://dl.bintray.com/deepmedia/tools")
         jcenter()
         google()
     }
     dependencies {
-        classpath("com.otaliastudios.tools:publisher:0.3.3-rc2")
+        classpath("io.deepmedia.tools:publisher:0.4.0")
     }
 }
 
@@ -17,6 +18,6 @@ allprojects {
     }
 }
 
-tasks.create("clean", Delete::class) {
+tasks.register("clean", Delete::class) {
     delete(buildDir)
 }

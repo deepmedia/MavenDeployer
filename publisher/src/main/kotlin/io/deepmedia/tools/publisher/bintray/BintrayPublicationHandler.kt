@@ -1,17 +1,15 @@
-package com.otaliastudios.tools.publisher.bintray
+package io.deepmedia.tools.publisher.bintray
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
-import com.otaliastudios.tools.publisher.Publication
-import com.otaliastudios.tools.publisher.PublicationHandler
+import io.deepmedia.tools.publisher.Publication
+import io.deepmedia.tools.publisher.PublicationHandler
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
-import org.gradle.internal.impldep.org.apache.maven.Maven
 import java.util.*
 
 internal class BintrayPublicationHandler(target: Project) : PublicationHandler(target) {
@@ -66,38 +64,49 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
 
         // Configure the plugin with the publication data.
         // We're replicating what ProjectsEvaluatedBuildListener.groovy does in the BGP
-        val bintray = target.tasks.create("bintrayUpload${mavenPublication.name.capitalize()}", BintrayUploadTask::class.java)
-        bintray.project = target
-        bintray.setPublications(mavenPublication.name)
-        bintray.apiUrl = "https://api.bintray.com" // BintrayUploadTask.API_URL_DEFAULT
-        bintray.user = publication.auth.user ?: ""
-        bintray.apiKey = publication.auth.key ?: ""
-        bintray.override = true
-        bintray.publish = true
-        bintray.dryRun = publication.dryRun
-        bintray.repoName = publication.auth.repo ?: ""
-        bintray.packageName = publication.project.name
-        publication.project.description?.let { bintray.packageDesc = it }
-        publication.project.vcsUrl?.let { bintray.packageVcsUrl = it }
-        val licenses = publication.project.licenses
-        if (licenses.isNotEmpty()) {
-            bintray.setPackageLicenses(*licenses.map { it.name }.toTypedArray())
+        val bintray = target.tasks.register(
+            "bintrayUpload${mavenPublication.name.capitalize()}",
+            BintrayUploadTask::class.java) {
+            val bintray = this
+            bintray.project = target
+            bintray.setPublications(mavenPublication.name)
+            bintray.apiUrl = "https://api.bintray.com" // BintrayUploadTask.API_URL_DEFAULT
+            bintray.user = publication.auth.user ?: ""
+            bintray.apiKey = publication.auth.key ?: ""
+            bintray.override = true
+            bintray.publish = true
+            bintray.dryRun = publication.dryRun
+            bintray.repoName = publication.auth.repo ?: ""
+            bintray.packageName = publication.project.name
+            publication.project.description?.let { bintray.packageDesc = it }
+            publication.project.vcsUrl?.let { bintray.packageVcsUrl = it }
+            val licenses = publication.project.licenses
+            if (licenses.isNotEmpty()) {
+                bintray.setPackageLicenses(*licenses.map { it.name }.toTypedArray())
+            }
+            bintray.versionName = publication.release.version!!
+            bintray.versionDesc = publication.release.description!!
+            bintray.versionReleased = Date().toString()
+            bintray.versionVcsTag = publication.release.vcsTag!!
+            bintray.dependsOn("publish${mavenPublication.name.capitalize()}PublicationToMavenLocal")
         }
-        bintray.versionName = publication.release.version!!
-        bintray.versionDesc = publication.release.description!!
-        bintray.versionReleased = Date().toString()
-        bintray.versionVcsTag = publication.release.vcsTag!!
-        bintray.dependsOn("publish${mavenPublication.name.capitalize()}PublicationToMavenLocal")
+
 
         // Need to call BintrayPublishTask.publishVersion to mark the version as published.
         // This is the actual bintrayPublish task that we'd call in the normal extension flow.
-        val bintrayPublish = target.tasks.create("bintrayPublish${mavenPublication.name.capitalize()}", BintrayPublishTask::class.java)
-        bintray.doLast {
-            if (didWork) {
-                bintrayPublishMethod.invoke(bintrayPublish,
-                    bintray.repoName, bintray.packageName, bintray.versionName, bintray)
+        val bintrayPublish = target.tasks.register(
+            "bintrayPublish${mavenPublication.name.capitalize()}",
+            BintrayPublishTask::class.java)
+        bintray.configure {
+            val bintray = this
+            doLast {
+                if (didWork) {
+                    bintrayPublishMethod.invoke(bintrayPublish.get(),
+                        bintray.repoName, bintray.packageName, bintray.versionName, bintray)
+                }
             }
         }
+
         allTask.dependsOn(bintray.name)
         return setOf(bintray.name)
     }

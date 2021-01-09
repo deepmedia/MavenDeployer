@@ -1,4 +1,4 @@
-package com.otaliastudios.tools.publisher.common
+package io.deepmedia.tools.publisher.common
 
 open class Project {
     var name: String? = null

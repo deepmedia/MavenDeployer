@@ -1,4 +1,4 @@
-package com.otaliastudios.tools.publisher
+package io.deepmedia.tools.publisher
 
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel

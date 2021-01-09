@@ -1,6 +1,6 @@
-package com.otaliastudios.tools.publisher.local
+package io.deepmedia.tools.publisher.local
 
-import com.otaliastudios.tools.publisher.common.DefaultPublication
+import io.deepmedia.tools.publisher.common.DefaultPublication
 
 class LocalPublication(name: String) : DefaultPublication(name) {
     /**

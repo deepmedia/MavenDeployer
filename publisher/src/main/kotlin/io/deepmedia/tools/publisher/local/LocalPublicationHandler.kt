@@ -1,9 +1,8 @@
-package com.otaliastudios.tools.publisher.local
+package io.deepmedia.tools.publisher.local
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.otaliastudios.tools.publisher.Publication
-import com.otaliastudios.tools.publisher.PublicationHandler
-import com.otaliastudios.tools.publisher.bintray.BintrayPublicationHandler
+import io.deepmedia.tools.publisher.Publication
+import io.deepmedia.tools.publisher.PublicationHandler
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication

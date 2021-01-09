@@ -1,6 +1,6 @@
-package com.otaliastudios.tools.publisher.bintray
+package io.deepmedia.tools.publisher.bintray
 
-import com.otaliastudios.tools.publisher.common.Auth
+import io.deepmedia.tools.publisher.common.Auth
 
 class BintrayAuth : Auth() {
     var repo: String? = null

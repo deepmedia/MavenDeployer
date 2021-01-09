@@ -1,4 +1,4 @@
-package com.otaliastudios.tools.publisher.common
+package io.deepmedia.tools.publisher.common
 
 class License(val name: String, val url: String) {
     // https://spdx.org/licenses/
