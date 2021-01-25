@@ -25,7 +25,7 @@ publisher {
     project.url = "https://github.com/deepmedia/MavenPublisher"
     project.vcsUrl = "https://github.com/deepmedia/MavenPublisher.git"
     project.addLicense(License.APACHE_2_0)
-    release.version = "0.4.0"
+    release.version = "0.4.1"
     release.sources = Release.SOURCES_AUTO
     release.docs = Release.DOCS_AUTO
 
@@ -37,5 +37,8 @@ publisher {
 
     directory {
         directory = "build/prebuilt"
+    }
+    directory("local") {
+        directory = file(repositories.mavenLocal().url).absolutePath
     }
 }

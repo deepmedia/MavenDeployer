@@ -17,6 +17,7 @@ import org.gradle.kotlin.dsl.getPlugin
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
+import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 
 
 internal fun Project.registerSourcesTask(publication: Publication): TaskProvider<Jar> {
@@ -41,13 +42,15 @@ internal fun Project.registerDocsTask(publication: Publication): TaskProvider<Ja
     check(isKotlin) { "Release.DOCS_AUTO only works in kotlin projects." }
     apply<DokkaPlugin>()
     return tasks.register("generatePublisher${publication.name.capitalize()}Docs", Jar::class.java) {
-        val task = tasks["dokkaJavadoc"] as DokkaTask
+        val taskName = if (isKotlinMultiplatform) "dokkaHtml" else "dokkaJavadoc"
+        val task = tasks[taskName] as DokkaTask
         dependsOn(task)
         archiveClassifier.set("javadoc")
         from(task.outputDirectory)
     }
 }
 
+internal val Project.isKotlinMultiplatform get() = plugins.toList().any { it is KotlinMultiplatformPluginWrapper }
 internal val Project.isKotlin get() = plugins.toList().any { it is KotlinBasePluginWrapper }
 internal val Project.isAndroid get() = plugins.toList().any { it is AndroidBasePlugin }
 internal val Project.isAndroidLibrary get() = plugins.toList().any { it is LibraryPlugin }
