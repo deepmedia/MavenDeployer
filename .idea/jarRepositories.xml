@@ -31,5 +31,10 @@
       <option name="name" value="Embedded Kotlin Repository" />
       <option name="url" value="file:$USER_HOME$/.gradle/caches/5.6.4/embedded-kotlin-repo-1.3.41-3/repo/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="MavenLocal" />
+      <option name="name" value="MavenLocal" />
+      <option name="url" value="file:$USER_HOME$/.m2/repository/" />
+    </remote-repository>
   </component>
 </project>
