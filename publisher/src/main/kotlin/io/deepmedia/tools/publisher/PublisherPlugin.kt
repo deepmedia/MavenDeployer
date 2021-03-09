@@ -20,7 +20,7 @@ import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
 
-    private val handlers = mutableListOf<PublicationHandler>()
+    private val handlers = mutableListOf<PublicationHandler<*>>()
 
     override fun apply(target: Project) {
         target.plugins.apply("maven-publish")
@@ -36,6 +36,7 @@ open class PublisherPlugin : Plugin<Project> {
         extension.configuredPublications.all {
             val publication = this
             val handler = handlers.first { it.ownsPublication(publication.name) }
+            handler as PublicationHandler<Publication>
             target.afterEvaluate { // For components to be created
                 val default = extension as Publication
                 fillPublication(target, publication, default, handler)
@@ -46,7 +47,12 @@ open class PublisherPlugin : Plugin<Project> {
         }
     }
 
-    private fun fillPublication(target: Project, publication: Publication, default: Publication, handler: PublicationHandler) {
+    private fun <P: Publication> fillPublication(
+        target: Project,
+        publication: P,
+        default: Publication,
+        handler: PublicationHandler<P>
+    ) {
         publication.publication = publication.publication ?: default.publication
         publication.component = publication.component ?: default.component ?: when {
             target.isAndroidLibrary -> "release"
@@ -99,13 +105,21 @@ open class PublisherPlugin : Plugin<Project> {
         handler.fillPublication(publication)
     }
 
-    private fun checkPublication(target: Project, publication: Publication, handler: PublicationHandler) {
+    private fun <P: Publication> checkPublication(
+        target: Project,
+        publication: P,
+        handler: PublicationHandler<P>
+    ) {
         handler.checkPublication(publication)
     }
 
     // https://developer.android.com/studio/build/maven-publish-plugin
     @Suppress("UnstableApiUsage")
-    private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler): TaskProvider<Task> {
+    private fun <P: Publication> createPublicationTask(
+        target: Project,
+        publication: P,
+        handler: PublicationHandler<P>
+    ): TaskProvider<Task> {
         var mavenPublication: MavenPublication? = null
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {

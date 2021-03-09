@@ -7,7 +7,7 @@ import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 
-internal class LocalPublicationHandler(target: Project) : PublicationHandler(target) {
+internal class LocalPublicationHandler(target: Project) : PublicationHandler<LocalPublication>(target) {
 
     companion object {
         internal const val PREFIX = "directory"
@@ -17,15 +17,13 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
 
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
     override fun createPublication(name: String) = LocalPublication(name)
-    override fun fillPublication(publication: Publication) = Unit
+    override fun fillPublication(publication: LocalPublication) = Unit
 
-    override fun checkPublication(publication: Publication) {
-        publication as LocalPublication
+    override fun checkPublication(publication: LocalPublication) {
         checkPublicationField(publication.directory, "directory", false)
     }
 
-    override fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String> {
-        publication as LocalPublication
+    override fun createPublicationTasks(publication: LocalPublication, mavenPublication: MavenPublication): Iterable<String> {
         val mavenRepository = publication.name // whatever
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.repositories {

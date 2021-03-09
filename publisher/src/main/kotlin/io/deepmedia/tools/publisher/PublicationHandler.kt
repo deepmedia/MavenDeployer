@@ -6,17 +6,17 @@ import org.gradle.api.publish.maven.MavenPublication
 import java.io.FileInputStream
 import java.util.*
 
-internal abstract class PublicationHandler(protected val target: Project) {
+internal abstract class PublicationHandler<P : Publication>(protected val target: Project) {
 
     abstract fun ownsPublication(name: String): Boolean
 
-    abstract fun createPublication(name: String): Publication
+    abstract fun createPublication(name: String): P
 
-    abstract fun fillPublication(publication: Publication)
+    abstract fun fillPublication(publication: P)
 
-    abstract fun checkPublication(publication: Publication)
+    abstract fun checkPublication(publication: P)
 
-    abstract fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String>
+    abstract fun createPublicationTasks(publication: P, mavenPublication: MavenPublication): Iterable<String>
 
     @Suppress("SameParameterValue")
     protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean) {

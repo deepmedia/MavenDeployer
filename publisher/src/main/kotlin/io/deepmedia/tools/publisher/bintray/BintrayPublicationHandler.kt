@@ -12,7 +12,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import java.util.*
 
-internal class BintrayPublicationHandler(target: Project) : PublicationHandler(target) {
+internal class BintrayPublicationHandler(target: Project) : PublicationHandler<BintrayPublication>(target) {
 
     companion object {
         internal const val PREFIX = "bintray"
@@ -28,15 +28,13 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
 
     override fun createPublication(name: String) = BintrayPublication(name)
 
-    override fun fillPublication(publication: Publication) {
-        publication as BintrayPublication
+    override fun fillPublication(publication: BintrayPublication) {
         publication.auth.user = findSecret(publication.auth.user ?: "auth.repo")
         publication.auth.key = findSecret(publication.auth.key ?: "auth.repo")
         publication.auth.repo = findSecret(publication.auth.repo ?: "auth.repo")
     }
 
-    override fun checkPublication(publication: Publication) {
-        publication as BintrayPublication
+    override fun checkPublication(publication: BintrayPublication) {
         // The only nullable and important fields at this point are auth* fields, but we want
         // to be tolerant on them as they might not be available e.g. on CI forks. Just warn.
         checkPublicationField(publication.auth.user, "auth.user", false)
@@ -44,9 +42,7 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler(t
         checkPublicationField(publication.auth.repo, "auth.repo", false)
     }
 
-    override fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String> {
-        publication as BintrayPublication
-
+    override fun createPublicationTasks(publication: BintrayPublication, mavenPublication: MavenPublication): Iterable<String> {
         // I think the bintray plugin needs these three to work properly.
         val base = target.convention.getPlugin(BasePluginConvention::class.java)
         target.version = publication.release.version!!
