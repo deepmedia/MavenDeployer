@@ -71,9 +71,9 @@ publisher {
     release.version = "0.1.4"
     
     // Release VCS tag. Defaults to "v${release.version}"
-    release.vcsTag = "v0.1.4"
+    release.tag = "v0.1.4"
     
-    // Release description. Defaults to "${project.name} {release.vcsTag}"
+    // Release description. Defaults to "${project.name} {release.tag}"
     release.description = "New release"
     
     // Release sources

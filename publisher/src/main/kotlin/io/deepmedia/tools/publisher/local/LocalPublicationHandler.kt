@@ -4,6 +4,9 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.deepmedia.tools.publisher.Publication
 import io.deepmedia.tools.publisher.PublicationHandler
 import org.gradle.api.Project
+import org.gradle.api.internal.artifacts.mvnsettings.DefaultLocalMavenRepositoryLocator
+import org.gradle.api.internal.artifacts.mvnsettings.DefaultMavenFileLocations
+import org.gradle.api.internal.artifacts.mvnsettings.DefaultMavenSettingsProvider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 
@@ -16,8 +19,18 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler<Loc
     private val allTask = target.tasks.register("publishAll${PREFIX.capitalize()}")
 
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
+
     override fun createPublication(name: String) = LocalPublication(name)
-    override fun fillPublication(publication: LocalPublication) = Unit
+
+    override fun fillPublication(publication: LocalPublication) {
+        // Not needed, done later.
+        /** publication.directory = publication.directory ?: runCatching {
+            val locations = DefaultMavenFileLocations()
+            val settings = DefaultMavenSettingsProvider(locations)
+            val locator = DefaultLocalMavenRepositoryLocator(settings)
+            locator.localMavenRepository.absolutePath
+        }.getOrNull() */
+    }
 
     override fun checkPublication(publication: LocalPublication) {
         checkPublicationField(publication.directory, "directory", false)

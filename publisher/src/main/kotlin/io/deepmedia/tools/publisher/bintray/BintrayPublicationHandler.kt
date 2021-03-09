@@ -83,7 +83,7 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler<B
             bintray.versionName = publication.release.version!!
             bintray.versionDesc = publication.release.description!!
             bintray.versionReleased = Date().toString()
-            bintray.versionVcsTag = publication.release.vcsTag!!
+            bintray.versionVcsTag = publication.release.tag!!
             bintray.dependsOn("publish${mavenPublication.name.capitalize()}PublicationToMavenLocal")
         }
 

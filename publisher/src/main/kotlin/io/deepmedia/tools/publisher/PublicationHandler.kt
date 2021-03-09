@@ -19,11 +19,11 @@ internal abstract class PublicationHandler<P : Publication>(protected val target
     abstract fun createPublicationTasks(publication: P, mavenPublication: MavenPublication): Iterable<String>
 
     @Suppress("SameParameterValue")
-    protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean) {
+    protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean, extra: String = "") {
         if (value == null) {
-            val message = "publisher.$field is not set."
+            val message = "publisher.$field is not set. $extra"
             if (fatal) {
-                throw IllegalArgumentException(message)
+                require(false) { message }
             } else {
                 target.logger.log(LogLevel.WARN, message)
             }

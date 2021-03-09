@@ -86,10 +86,13 @@ open class PublisherPlugin : Plugin<Project> {
             } else {
                 target.version.toString()
             }
-        publication.release.vcsTag = publication.release.vcsTag
-            ?: default.release.vcsTag ?: "v${publication.release.version!!}"
+        publication.release.tag = publication.release.tag
+            ?: default.release.tag
+                    ?: publication.release.vcsTag
+                    ?: default.release.vcsTag
+                    ?: "v${publication.release.version!!}"
         publication.release.description = publication.release.description
-            ?: default.release.description ?: "${publication.project.name!!} ${publication.release.vcsTag!!}"
+            ?: default.release.description ?: "${publication.project.name!!} ${publication.release.tag!!}"
         publication.release.sources = publication.release.sources ?: default.release.sources
         publication.release.docs = publication.release.docs ?: default.release.docs
 
@@ -162,11 +165,22 @@ open class PublisherPlugin : Plugin<Project> {
                 }
             }
         }
+        maven.pom.developers {
+            publication.project.developers.forEach {
+                developer {
+                    name.set(it.name)
+                    email.set(it.email)
+                    it.organization?.let { organization.set(it) }
+                    it.url?.let { organizationUrl.set(it) }
+                }
+            }
+        }
         maven.pom.scm {
+            tag.set(publication.release.tag!!)
+
             publication.project.vcsUrl?.let { connection.set(it) }
             publication.project.vcsUrl?.let { developerConnection.set(it) }
             publication.project.url?.let { url.set(it) }
-            publication.release.vcsTag?.let { tag.set(it) }
         }
     }
 }
