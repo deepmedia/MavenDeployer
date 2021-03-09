@@ -6,6 +6,7 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.deepmedia.tools.publisher.bintray.BintrayPublicationHandler
 import io.deepmedia.tools.publisher.common.Release
+import io.deepmedia.tools.publisher.common.Scm
 import io.deepmedia.tools.publisher.local.LocalPublicationHandler
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -69,8 +70,12 @@ open class PublisherPlugin : Plugin<Project> {
         val base = target.convention.getPlugin(BasePluginConvention::class.java)
         publication.project.artifact = publication.project.artifact
             ?: default.project.artifact ?: base.archivesBaseName
-        publication.project.vcsUrl = publication.project.vcsUrl
-            ?: default.project.vcsUrl ?: publication.project.url ?: default.project.url
+        publication.project.url = publication.project.url ?: default.project.url
+
+        val deprecatedVcsUrl = publication.project.vcsUrl
+            ?: default.project.vcsUrl ?: publication.project.url
+        publication.project.scm = publication.project.scm
+            ?: default.project.scm ?: deprecatedVcsUrl?.let { Scm(it) }
         publication.project.packaging = publication.project.packaging
             ?: default.project.packaging ?: when {
                 publication.publication != null -> null // we'll use the MavenPublication packaging
@@ -177,10 +182,11 @@ open class PublisherPlugin : Plugin<Project> {
         }
         maven.pom.scm {
             tag.set(publication.release.tag!!)
-
-            publication.project.vcsUrl?.let { connection.set(it) }
-            publication.project.vcsUrl?.let { developerConnection.set(it) }
-            publication.project.url?.let { url.set(it) }
+            publication.project.scm?.let {
+                url.set(it.source(publication.release.tag!!))
+                it.connection?.let { connection.set(it) }
+                it.developerConnection?.let { developerConnection.set(it) }
+            }
         }
     }
 }

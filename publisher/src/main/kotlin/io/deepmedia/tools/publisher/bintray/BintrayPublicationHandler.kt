@@ -75,7 +75,7 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler<B
             bintray.repoName = publication.auth.repo ?: ""
             bintray.packageName = publication.project.name
             publication.project.description?.let { bintray.packageDesc = it }
-            publication.project.vcsUrl?.let { bintray.packageVcsUrl = it }
+            publication.project.scm?.url?.let { bintray.packageVcsUrl = it }
             val licenses = publication.project.licenses
             if (licenses.isNotEmpty()) {
                 bintray.setPackageLicenses(*licenses.map { it.name }.toTypedArray())

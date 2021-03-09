@@ -8,7 +8,10 @@ open class Project {
     // possibly empty
     var url: String? = null
 
-    // defaults to $url, so possibly empty
+    // possibly empty
+    var scm: Scm? = null
+
+    @Deprecated("Use scm")
     var vcsUrl: String? = null
 
     var group: String? = null
@@ -28,7 +31,7 @@ open class Project {
     fun addLicense(name: String, url: String) = addLicense(License(name, url))
 
     fun addLicense(license: License) {
-        licenses = licenses + license
+        licenses += license
     }
 
     fun addDeveloper(
@@ -39,6 +42,6 @@ open class Project {
     ) = addDeveloper(Developer(name, email, organization, url))
 
     fun addDeveloper(developer: Developer) {
-        developers = developers + developer
+        developers += developer
     }
 }

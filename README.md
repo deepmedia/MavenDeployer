@@ -57,9 +57,12 @@ publisher {
     // Project url
     project.url = "https://github.com/deepmedia/MavenPublisher"
     
-    // Project VCS url. Defaults to project.url
-    project.vcsUrl = "https://github.com/deepmedia/MavenPublisher.git"
-    
+    // Project SCM info. Defaults to simple Scm pointing to project.url
+    // Using platform specific functions ensure correct scm values
+    project.scm = Scm("https://github.com/deepmedia/MavenPublisher.git")
+    project.scm = GithubScm(user = "deepmedia", repository = "MavenPublisher")
+    project.scm = BitBucketScm(user = "deepmedia", repository = "MavenPublisher")
+
     // Project packaging. Automatically set to AAR for Android libraries
     project.packaging = "aar"
     
