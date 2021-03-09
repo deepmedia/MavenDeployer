@@ -1,6 +1,6 @@
 package io.deepmedia.tools.publisher.common
 
-class License(val name: String, val url: String) {
+data class License(val name: String, val url: String) {
     // https://spdx.org/licenses/
     companion object {
         @JvmField

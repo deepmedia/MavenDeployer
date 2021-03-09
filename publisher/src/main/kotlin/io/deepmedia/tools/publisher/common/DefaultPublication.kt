@@ -10,4 +10,5 @@ open class DefaultPublication(name: String) : Publication {
     override val auth = Auth()
     override val project = Project()
     override val release = Release()
+    override val signing = Signing()
 }

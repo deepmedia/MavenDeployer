@@ -1,16 +1,12 @@
 package io.deepmedia.tools.publisher.local
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import io.deepmedia.tools.publisher.Publication
-import io.deepmedia.tools.publisher.PublicationHandler
+import io.deepmedia.tools.publisher.Handler
 import org.gradle.api.Project
-import org.gradle.api.internal.artifacts.mvnsettings.DefaultLocalMavenRepositoryLocator
-import org.gradle.api.internal.artifacts.mvnsettings.DefaultMavenFileLocations
-import org.gradle.api.internal.artifacts.mvnsettings.DefaultMavenSettingsProvider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 
-internal class LocalPublicationHandler(target: Project) : PublicationHandler<LocalPublication>(target) {
+internal class LocalHandler(target: Project) : Handler<LocalPublication>(target) {
 
     companion object {
         internal const val PREFIX = "directory"
@@ -33,7 +29,7 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler<Loc
     }
 
     override fun checkPublication(publication: LocalPublication) {
-        checkPublicationField(publication.directory, "directory", false)
+        // checkPublicationField(publication.directory, "directory", false)
     }
 
     override fun createPublicationTasks(publication: LocalPublication, mavenPublication: MavenPublication): Iterable<String> {

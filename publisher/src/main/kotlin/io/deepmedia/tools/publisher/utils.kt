@@ -18,7 +18,35 @@ import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
+import java.io.FileInputStream
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
+
+private val localPropertiesCache = ConcurrentHashMap<Project, Properties>()
+
+internal fun Project.findSecret(key: String): String? {
+    // Try with environmental variable.
+    val env: String? = System.getenv(key)
+    if (!env.isNullOrEmpty()) return env
+    // Try with findProperty.
+    val project = findProperty(key) as? String
+    if (!project.isNullOrEmpty()) return project
+    // Try with local.properties file.
+    val properties = localPropertiesCache.getOrPut(rootProject) {
+        val properties = Properties()
+        val file = rootProject.file("local.properties")
+        if (file.exists()) {
+            val stream = FileInputStream(file)
+            properties.load(stream)
+        }
+        properties
+    }
+    val local = properties!!.getProperty(key)
+    if (!local.isNullOrEmpty()) return local
+    // We failed. Return null.
+    return null
+}
 
 internal fun Project.registerSourcesTask(publication: Publication): TaskProvider<Jar> {
     check(isJava) { "Release.SOURCES_AUTO only works with Java projects." }

@@ -5,7 +5,7 @@
 # MavenPublisher
 
 A lightweight, handy tool for publishing your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
-to different kinds of maven repositories. Currently, [Bintray](https://bintray.com) and local directories are supported.
+to different kinds of maven repositories. Currently, [Sonatype](https://central.sonatype.org/), [Bintray](https://bintray.com) and local directories are supported.
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
@@ -21,7 +21,7 @@ buildscript {
 }
 ```
 
-The publisher plugin uses an older version of itself to publish itself into Bintray's JCenter.
+The publisher plugin uses an older version of itself to publish itself into the Maven Central repository.
 This means that you can check the plugin source code to see an example of how to use it.
 
 For more examples, please take a look at [natario1/Egloo](https://github.com/natario1/Egloo), [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
@@ -86,6 +86,10 @@ publisher {
     // Release docs
     release.setDocs(Release.DOCS_AUTO) // create a docs Jar
     release.setDocs(dokkaJar.get())
+
+    // Signing keys
+    signing.key = "signing.key"
+    signing.password = "signing.password"
 }
 ```
 
@@ -124,7 +128,7 @@ Typically, you should specify either one or the other.
 
 ### Secret values
 
-Some sensitive values, especially in the auth configuration, are declared as secret.
+Sensitive values in the `auth` and `signing` configuration blocks are declared as secret.
 In this case, instead of passing the real value, you are supposed to pass a **key** to the real
 value.
 
@@ -134,24 +138,31 @@ The publisher will use this key and look for the value as follows:
 - Search with `project.findProperty(key)`
 - Search in `local.properties` file, if present
 
+In other words, `signing.password` - for example - should not host your password in plain text, but rather a key
+to the actual password, like the name of an environment variable which holds the password.
+
+When the key value is absent, we assume it is equal to the field name (`"signing.password"`). This
+means that you can avoid configuring these values at all in Gradle, and just provide env variables
+or properties with the correct name (`"signing.password"`, `"signing.key"`, `"auth.user"`...).
+
 ### Publication tasks
 
 The publisher plugin will add a task named `:publishTo` followed by the publication name.
-The publication name depends on the publisher being used (for example, bintray) and the name
+The publication name depends on the publisher being used (for example, sonatype) and the name
 that is passed to the configuration. For example:
 
 ```kotlin
 publisher {
     // Common configuration ...
 
-    bintray {
-        // Bintray onfiguration...
+    sonatype {
+        // Sonatype configuration...
     }
-    bintray("foo") {
-        // Bintray configuration for foo...
+    sonatype("foo") {
+        // Sonatype configuration for foo...
     }
-    bintray("bar") {
-        // Bintray configuration for bar...
+    sonatype("bar") {
+        // Sonatype configuration for bar...
     }
     directory {
         // Local dir configuration...
@@ -164,12 +175,12 @@ publisher {
 
 In the example above, the following tasks will be available:
 
-- `:publishToBintray`: publishes the default bintray configuration
-- `:publishToBintrayFoo`: publishes the `foo` bintray configuration
-- `:publishToBintrayBar`: publishes the `bar` bintray configuration
+- `:publishToSonatype`: publishes the default sonatype configuration
+- `:publishToSonatypeFoo`: publishes the `foo` sonatype configuration
+- `:publishToSonatypeBar`: publishes the `bar` sonatype configuration
 - `:publishToDirectory`: publishes the default directory configuration
-- `:publishToDirectoryAbc`: publishes the `abc` bintray configuration
-- `:publishAllBintray`: publishes all "bintray" publications
+- `:publishToDirectoryAbc`: publishes the `abc` sonatype configuration
+- `:publishAllSonatype`: publishes all "sonatype" publications
 - `:publishAllDirectory`: publishes all "directory" publications
 - `:publishAll`: publishes everything
 
@@ -191,11 +202,42 @@ publisher {
 }
 ```
 
-As described earlier, all the configuration fields that are set in the `directory` block will override
-the root level values.
+As described earlier, all the configuration fields that are set in the `bintray` block will override
+the root level values. Note also that all `signing` fields are [Secret values](#secret-values)!
 
 If the directory is not set, the local publisher will publish into the "maven local" repository,
 typically `$USER_HOME/.m2/repository` (see [docs](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())).
+
+## Sonatype publisher
+
+In addition to the common configuration fields, to authenticate to Sonatype, you will need to pass
+your username and password that were used to register the package group in OSSHR:
+
+
+```kotlin
+publisher {
+    // Common configuration...
+    project.description = "Handy tool to publish maven packages in different repositories."
+
+    sonatype {
+        // Sonatype configuration...
+        repository = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+        auth.user = "SONATYPE_USER" // defaults to "auth.user"
+        auth.password = "SONATYPE_PASSWORD" // defaults to "auth.password"
+
+        // Signing is required
+        signing.key = "SIGNING_KEY" // defaults to "signing.key"
+        signing.password = "SIGNING_PASSWORD" // defaults to "signing.password"
+    }
+
+    // If needed, you can add other named publications.
+    sonatype("other") { ... }
+}
+```
+
+As described earlier, all the configuration fields that are set in the `bintray` block will override
+the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
 
 ## Bintray publisher
 
@@ -205,6 +247,8 @@ a user name, a user key and the Bintray repo name as follows:
 ```kotlin
 publisher {
     // Common configuration...
+    project.description = "Handy tool to publish maven packages in different repositories."
+
     bintray {
         // Bintray configuration...
         auth.user = "BINTRAY_USER" // defaults to "auth.user"
@@ -219,10 +263,4 @@ publisher {
 ```
 
 As described earlier, all the configuration fields that are set in the `bintray` block will override
-the root level values.
-
-Note that the `auth` values are [Secret values](#secret-values), so instead of passing the real
-value in plain text, a key (to an environment variable or local property) should be passed.
-
-Since there is a default key, there is no need to declare your own keys in the plugin configuration -
-you can simply provide values for the default keys (for example, as env properties).
+the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!

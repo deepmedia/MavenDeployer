@@ -3,8 +3,8 @@ package io.deepmedia.tools.publisher.bintray
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
-import io.deepmedia.tools.publisher.Publication
-import io.deepmedia.tools.publisher.PublicationHandler
+import io.deepmedia.tools.publisher.Handler
+import io.deepmedia.tools.publisher.findSecret
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
@@ -12,7 +12,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import java.util.*
 
-internal class BintrayPublicationHandler(target: Project) : PublicationHandler<BintrayPublication>(target) {
+internal class BintrayHandler(target: Project) : Handler<BintrayPublication>(target) {
 
     companion object {
         internal const val PREFIX = "bintray"
@@ -29,9 +29,9 @@ internal class BintrayPublicationHandler(target: Project) : PublicationHandler<B
     override fun createPublication(name: String) = BintrayPublication(name)
 
     override fun fillPublication(publication: BintrayPublication) {
-        publication.auth.user = findSecret(publication.auth.user ?: "auth.repo")
-        publication.auth.key = findSecret(publication.auth.key ?: "auth.repo")
-        publication.auth.repo = findSecret(publication.auth.repo ?: "auth.repo")
+        publication.auth.user = target.findSecret(publication.auth.user ?: "auth.user")
+        publication.auth.key = target.findSecret(publication.auth.key ?: "auth.key")
+        publication.auth.repo = target.findSecret(publication.auth.repo ?: "auth.repo")
     }
 
     override fun checkPublication(publication: BintrayPublication) {

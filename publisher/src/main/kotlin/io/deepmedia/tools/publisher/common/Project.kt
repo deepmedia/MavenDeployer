@@ -31,7 +31,9 @@ open class Project {
     fun addLicense(name: String, url: String) = addLicense(License(name, url))
 
     fun addLicense(license: License) {
-        licenses += license
+        if (!licenses.contains(license)) {
+            licenses = licenses + license
+        }
     }
 
     fun addDeveloper(
@@ -42,6 +44,8 @@ open class Project {
     ) = addDeveloper(Developer(name, email, organization, url))
 
     fun addDeveloper(developer: Developer) {
-        developers += developer
+        if (!developers.contains(developer)) {
+            developers = developers + developer
+        }
     }
 }
