@@ -26,22 +26,21 @@ publisher {
     project.scm = GithubScm("deepmedia", "MavenPublisher")
     project.addLicense(License.APACHE_2_0)
 
-    release.version = "0.5.0-st3"
+    release.version = "0.5.0"
     release.sources = Release.SOURCES_AUTO
     release.docs = Release.DOCS_AUTO
-
-
-    bintray {
-        auth.user = "BINTRAY_USER"
-        auth.key = "BINTRAY_KEY"
-        auth.repo = "BINTRAY_REPO"
-    }
 
     sonatype {
         auth.user = "SONATYPE_USER"
         auth.password = "SONATYPE_PASSWORD"
         signing.key = "SIGNING_KEY"
         signing.password = "SIGNING_PASSWORD"
+        project.addDeveloper(
+            name = "natario1",
+            email = "mattia@deepmedia.io",
+            organization = "DeepMedia",
+            url = "deepmedia.io"
+        )
     }
 
     directory {
@@ -49,5 +48,10 @@ publisher {
         signing.key = "SIGNING_KEY"
         signing.password = "SIGNING_PASSWORD"
     }
-    // directory("local") {}
+
+    bintray {
+        auth.user = "BINTRAY_USER"
+        auth.key = "BINTRAY_KEY"
+        auth.repo = "BINTRAY_REPO"
+    }
 }

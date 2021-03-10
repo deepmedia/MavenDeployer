@@ -5,7 +5,10 @@
 # MavenPublisher
 
 A lightweight, handy tool for publishing your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
-to different kinds of maven repositories. Currently, [Sonatype](https://central.sonatype.org/), [Bintray](https://bintray.com) and local directories are supported.
+to different kinds of maven repositories. It supports publishing into:
+- local directories, to use them as local maven repositories in other projects
+- Sonatype Nexus repositories, including [Sonatype OSSRH / Maven Central](https://central.sonatype.org/)
+- Bintray's [JCenter](https://bintray.com), soon to be deprecated
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
@@ -16,7 +19,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("io.deepmedia.tools:publisher:0.4.1")
+        classpath("io.deepmedia.tools:publisher:0.5.0")
     }
 }
 ```
@@ -208,11 +211,15 @@ the root level values. Note also that all `signing` fields are [Secret values](#
 If the directory is not set, the local publisher will publish into the "maven local" repository,
 typically `$USER_HOME/.m2/repository` (see [docs](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())).
 
-## Sonatype publisher
+## Sonatype / Nexus / Maven Central publisher
 
-In addition to the common configuration fields, to authenticate to Sonatype, you will need to pass
-your username and password that were used to register the package group in OSSHR:
+By default, the sonatype publisher will publish packages at `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`,
+in the Sonatype OSSRH which can be synced to Maven Central. In this case, in addition to the common
+configuration fields, you will need to pass your username and password that were used to register
+the package group in OSSRH in order to authenticate.
 
+Note that publishing to OSSRH also makes many fields (like a license and at least a developer) mandatory.
+MavenPublisher will fail with clear errors notifying you about what's missing.
 
 ```kotlin
 publisher {
@@ -221,7 +228,9 @@ publisher {
 
     sonatype {
         // Sonatype configuration...
-        repository = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+        // You can find repository constants in io.deepmedia.tools.publisher.sonatype.Sonatype.
+        // To publish a snapshot, just use one of the Sonatype.OSSRH_SNAPSHOT_* urls.
+        repository = Sonatype.OSSRH_1
 
         auth.user = "SONATYPE_USER" // defaults to "auth.user"
         auth.password = "SONATYPE_PASSWORD" // defaults to "auth.password"
@@ -232,7 +241,10 @@ publisher {
     }
 
     // If needed, you can add other named publications.
-    sonatype("other") { ... }
+    sonatype("snapshot") {
+        repository = Sonatype.OSSRH_SNAPSHOT_1
+        ...
+    }
 }
 ```
 

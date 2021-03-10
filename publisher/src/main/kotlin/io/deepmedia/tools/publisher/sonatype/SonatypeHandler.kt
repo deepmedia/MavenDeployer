@@ -62,11 +62,11 @@ internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(t
         require(publication.project.developers.isNotEmpty()) {
             "Sonatype requires at least one developer in publisher.project.developers."
         }
-        publication.project.developers.forEach {
+        /* publication.project.developers.forEach {
             require(it.organization != null && it.url != null) {
                 "Sonatype requires all developers to have an organization and url."
             }
-        }
+        } */
         checkPublicationField(publication.project.scm?.connection,
             "project.scm.connection", true,
             "This field is required for sonatype publishing. " +

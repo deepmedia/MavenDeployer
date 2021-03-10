@@ -159,8 +159,8 @@ open class PublisherPlugin : Plugin<Project> {
         // Configure signing if present
         if (publication.signing.key != null || publication.signing.password != null) {
             val signing = target.extensions.getByType(SigningExtension::class)
-            target.logger.log(LogLevel.WARN, "SIGNIGN WITH KEY=${publication.signing.key}")
-            target.logger.log(LogLevel.WARN, "SIGNIGN WITH PASSWORD=${publication.signing.key}")
+            // target.logger.log(LogLevel.WARN, "SIGNING WITH KEY=${publication.signing.key}")
+            // target.logger.log(LogLevel.WARN, "SIGNING WITH PASSWORD=${publication.signing.password}")
             signing.useInMemoryPgpKeys(publication.signing.key, publication.signing.password)
             signing.sign(mavenPublication)
         }
@@ -171,7 +171,12 @@ open class PublisherPlugin : Plugin<Project> {
         }
     }
 
-    private fun configureMavenPublication(target: Project, maven: MavenPublication, publication: Publication, owned: Boolean) {
+    private fun configureMavenPublication(
+        target: Project,
+        maven: MavenPublication,
+        publication: Publication,
+        owned: Boolean
+    ) {
         if (owned) {
             // We have created the publication, so we must have a software component for it.
             maven.from(target.components[publication.component!!])
