@@ -15,7 +15,7 @@ To use any of the publisher plugins, you must configure the plugin repository in
 ```kotlin
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
         google()
     }
     dependencies {
