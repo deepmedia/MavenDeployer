@@ -50,11 +50,6 @@ open class PublisherPlugin : Plugin<Project> {
                 fillPublication(target, publication, default, handler)
                 checkPublication(target, publication, handler, fatal = false)
                 val pubTask = createPublicationTask(target, publication, handler)
-                pubTask.configure {
-                    doFirst {
-                        checkPublication(target, publication, handler, fatal = true)
-                    }
-                }
                 task.dependsOn(pubTask)
             }
         }
