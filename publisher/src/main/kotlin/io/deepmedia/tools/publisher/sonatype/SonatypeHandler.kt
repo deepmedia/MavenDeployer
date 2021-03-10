@@ -2,6 +2,8 @@ package io.deepmedia.tools.publisher.sonatype
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.deepmedia.tools.publisher.Handler
+import io.deepmedia.tools.publisher.checkPublicationField
+import io.deepmedia.tools.publisher.checkPublicationFieldCondition
 import io.deepmedia.tools.publisher.findSecret
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
@@ -42,24 +44,29 @@ internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(t
         publication.auth.password = target.findSecret(publication.auth.password ?: "auth.password")
     }
 
-    override fun checkPublication(publication: SonatypePublication) {
+    override fun checkPublication(publication: SonatypePublication, fatal: Boolean) {
         // Auth
-        checkPublicationField(publication.auth.user, "auth.user", true)
-        checkPublicationField(publication.auth.password, "auth.password", true)
-        checkPublicationField(publication.signing.key, "signing.key", true)
-        checkPublicationField(publication.signing.password, "signing.password", true)
+        target.checkPublicationField(fatal, publication.auth.user, "sonatype.auth.user")
+        target.checkPublicationField(fatal, publication.auth.password, "sonatype.auth.password")
+        target.checkPublicationField(fatal, publication.signing.key, "signing.key")
+        target.checkPublicationField(fatal, publication.signing.password, "signing.password")
 
         // Other
-        checkPublicationField(publication.release.sources, "release.sources", true,
-            "This field is required for sonatype publishing.")
-        checkPublicationField(publication.release.docs, "release.docs", true,
-            "This field is required for sonatype publishing.")
-        checkPublicationField(publication.project.url, "project.url", true,
-            "This field is required for sonatype publishing.")
-        require(publication.project.licenses.isNotEmpty()) {
+        target.checkPublicationField(fatal, publication.release.sources, "release.sources") {
+            "This field is required for sonatype publishing."
+        }
+        target.checkPublicationField(fatal, publication.release.docs, "release.docs") {
+            "This field is required for sonatype publishing."
+        }
+        target.checkPublicationField(fatal, publication.project.url, "project.url") {
+            "This field is required for sonatype publishing."
+        }
+        target.checkPublicationFieldCondition(fatal, publication.project.licenses.isNotEmpty(),
+            "project.licenses") {
             "Sonatype requires at least one license in publisher.project.licenses."
         }
-        require(publication.project.developers.isNotEmpty()) {
+        target.checkPublicationFieldCondition(fatal, publication.project.developers.isNotEmpty(),
+            "project.developers") {
             "Sonatype requires at least one developer in publisher.project.developers."
         }
         /* publication.project.developers.forEach {
@@ -67,20 +74,22 @@ internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(t
                 "Sonatype requires all developers to have an organization and url."
             }
         } */
-        checkPublicationField(publication.project.scm?.connection,
-            "project.scm.connection", true,
-            "This field is required for sonatype publishing. " +
-                    "You can use utilities like GithubScm to set this for you.")
-        checkPublicationField(publication.project.scm?.developerConnection,
-            "project.scm.developerConnection", true,
-            "This field is required for sonatype publishing. " +
-                    "You can use utilities like GithubScm to set this for you.")
+        target.checkPublicationField(fatal, publication.project.scm?.connection,
+            "project.scm.connection") {
+            "This field is required for sonatype publishing." +
+                    "You can use utilities like GithubScm to set this for you."
+        }
+        target.checkPublicationField(fatal, publication.project.scm?.developerConnection,
+            "project.scm.developerConnection") {
+            "This field is required for sonatype publishing." +
+                    "You can use utilities like GithubScm to set this for you."
+        }
     }
 
-    override fun createPublicationTasks(
+    override fun createPublicationTask(
         publication: SonatypePublication,
         mavenPublication: MavenPublication
-    ): Iterable<String> {
+    ): String {
         val repository = publication.name // whatever
         val publishing = target.extensions.getByType(PublishingExtension::class)
         publishing.repositories {
@@ -91,9 +100,9 @@ internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(t
                 credentials.username = publication.auth.user
             }
         }
-        val publishTask = "publish${mavenPublication.name.capitalize()}PublicationTo${repository.capitalize()}Repository"
-        allTask.dependsOn(publishTask)
-        return setOf(publishTask)
+        return "publish${mavenPublication.name.capitalize()}PublicationTo${repository.capitalize()}Repository".also {
+            allTask.dependsOn(it)
+        }
     }
 
 }

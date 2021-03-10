@@ -7,6 +7,7 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
 import io.deepmedia.tools.publisher.Publication
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.TaskProvider
@@ -22,6 +23,21 @@ import java.io.FileInputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+internal fun Project.checkPublicationField(fatal: Boolean, value: Any?, field: String, message: () -> String = { "" }) {
+    if (fatal) {
+        requireNotNull(value) { "publisher.$field is not set. ${message()}" }
+    } else if (value == null) {
+        logger.log(LogLevel.WARN, "publisher.$field is not set. ${message()}" )
+    }
+}
+
+internal fun Project.checkPublicationFieldCondition(fatal: Boolean, condition: Boolean, field: String, message: () -> String = { "" }) {
+    if (fatal) {
+        require(condition) { "publisher.$field is not properly set. ${message()}" }
+    } else if (!condition) {
+        logger.log(LogLevel.WARN, "publisher.$field is not properly set. ${message()}" )
+    }
+}
 
 private val localPropertiesCache = ConcurrentHashMap<Project, Properties>()
 

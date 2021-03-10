@@ -4,6 +4,7 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.jfrog.bintray.gradle.tasks.BintrayUploadTask
 import com.jfrog.bintray.gradle.tasks.BintrayPublishTask
 import io.deepmedia.tools.publisher.Handler
+import io.deepmedia.tools.publisher.checkPublicationField
 import io.deepmedia.tools.publisher.findSecret
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -34,15 +35,13 @@ internal class BintrayHandler(target: Project) : Handler<BintrayPublication>(tar
         publication.auth.repo = target.findSecret(publication.auth.repo ?: "auth.repo")
     }
 
-    override fun checkPublication(publication: BintrayPublication) {
-        // The only nullable and important fields at this point are auth* fields, but we want
-        // to be tolerant on them as they might not be available e.g. on CI forks. Just warn.
-        checkPublicationField(publication.auth.user, "auth.user", false)
-        checkPublicationField(publication.auth.key, "auth.key", false)
-        checkPublicationField(publication.auth.repo, "auth.repo", false)
+    override fun checkPublication(publication: BintrayPublication, fatal: Boolean) {
+        target.checkPublicationField(fatal, publication.auth.user, "bintray.auth.user")
+        target.checkPublicationField(fatal, publication.auth.key, "bintray.auth.key")
+        target.checkPublicationField(fatal, publication.auth.repo, "bintray.auth.repo")
     }
 
-    override fun createPublicationTasks(publication: BintrayPublication, mavenPublication: MavenPublication): Iterable<String> {
+    override fun createPublicationTask(publication: BintrayPublication, mavenPublication: MavenPublication): String {
         // I think the bintray plugin needs these three to work properly.
         val base = target.convention.getPlugin(BasePluginConvention::class.java)
         target.version = publication.release.version!!
@@ -102,9 +101,9 @@ internal class BintrayHandler(target: Project) : Handler<BintrayPublication>(tar
                 }
             }
         }
-
-        allTask.dependsOn(bintray.name)
-        return setOf(bintray.name)
+        return bintray.name.also {
+            allTask.dependsOn(it)
+        }
     }
 
 

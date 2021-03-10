@@ -14,19 +14,7 @@ internal abstract class Handler<P : Publication>(protected val target: Project) 
 
     abstract fun fillPublication(publication: P)
 
-    abstract fun checkPublication(publication: P)
+    abstract fun checkPublication(publication: P, fatal: Boolean)
 
-    abstract fun createPublicationTasks(publication: P, mavenPublication: MavenPublication): Iterable<String>
-
-    @Suppress("SameParameterValue")
-    protected fun checkPublicationField(value: Any?, field: String, fatal: Boolean, extra: String = "") {
-        if (value == null) {
-            val message = "publisher.$field is not set. $extra"
-            if (fatal) {
-                require(false) { message }
-            } else {
-                target.logger.log(LogLevel.WARN, message)
-            }
-        }
-    }
+    abstract fun createPublicationTask(publication: P, mavenPublication: MavenPublication): String
 }

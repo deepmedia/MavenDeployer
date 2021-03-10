@@ -48,8 +48,13 @@ open class PublisherPlugin : Plugin<Project> {
             target.afterEvaluate { // For components to be created
                 val default = extension as Publication
                 fillPublication(target, publication, default, handler)
-                checkPublication(target, publication, handler)
+                checkPublication(target, publication, handler, fatal = false)
                 val pubTask = createPublicationTask(target, publication, handler)
+                pubTask.configure {
+                    doFirst {
+                        checkPublication(target, publication, handler, fatal = true)
+                    }
+                }
                 task.dependsOn(pubTask)
             }
         }
@@ -130,9 +135,10 @@ open class PublisherPlugin : Plugin<Project> {
     private fun <P: Publication> checkPublication(
         target: Project,
         publication: P,
-        handler: Handler<P>
+        handler: Handler<P>,
+        fatal: Boolean
     ) {
-        handler.checkPublication(publication)
+        handler.checkPublication(publication, fatal)
     }
 
     // https://developer.android.com/studio/build/maven-publish-plugin
@@ -165,9 +171,13 @@ open class PublisherPlugin : Plugin<Project> {
             signing.sign(mavenPublication)
         }
 
-        val tasks = handler.createPublicationTasks(publication, mavenPublication!!)
+        val publishTask = handler.createPublicationTask(publication, mavenPublication!!)
+        val checkTask = target.tasks.register("check${publication.name.capitalize()}") {
+            doFirst { checkPublication(target, publication, handler, fatal = true) }
+        }
         return target.tasks.register("publishTo${publication.name.capitalize()}") {
-            dependsOn(*tasks.toList().toTypedArray())
+            dependsOn(checkTask)
+            finalizedBy(publishTask)
         }
     }
 
