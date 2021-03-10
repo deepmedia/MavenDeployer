@@ -6,7 +6,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("io.deepmedia.tools:publisher:0.5.0-rc02")
+        classpath("io.deepmedia.tools:publisher:0.5.0-rc03")
     }
 }
 

@@ -33,6 +33,7 @@ package io.deepmedia.tools.publisher.sonatype
  * Need to login at https://s01.oss.sonatype.org/ with these credentials. Then locate the newest
  * repository in Staging Repositories, select and click Close. Data will be verified, it will take a
  * while, then click Release. If it's the first time, you also have to send a comment in the jira ticket.
+ * The repo will appear here when synced: https://repo1.maven.org/maven2/ .
  */
 object Sonatype {
     const val OSSRH_SNAPSHOT_0 = "https://oss.sonatype.org/content/repositories/snapshots/"
