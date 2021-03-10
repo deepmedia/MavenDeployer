@@ -159,7 +159,14 @@ open class PublisherPlugin : Plugin<Project> {
         if (publication.signing.key != null || publication.signing.password != null) {
             val signing = target.extensions.getByType(SigningExtension::class)
             signing.useInMemoryPgpKeys(publication.signing.key, publication.signing.password)
-            signing.sign(mavenPublication)
+            try {
+                signing.sign(mavenPublication)
+            } catch (e: Exception) {
+                target.logger.log(LogLevel.WARN,
+                    "Two or more publications share the same MavenPublication under the hood! " +
+                            "Only one of the signatures will be used, and other configuration parameters " +
+                            "might be conflicting as well.")
+            }
         }
 
         val publishTask = handler.createPublicationTask(publication, mavenPublication)
