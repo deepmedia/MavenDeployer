@@ -29,7 +29,7 @@ This means that you can check the plugin source code to see an example of how to
 
 It also uses itself to publish snapshots to `https://s01.oss.sonatype.org/content/repositories/snapshots/`
 on each push to main. To use the snapshots, add the url as a maven repository and depend on
-`classpath("io.deepmedia.tools:publisher:SNAPSHOT")`.
+`classpath("io.deepmedia.tools:publisher:latest-SNAPSHOT")`.
 
 For more examples, please take a look at [natario1/Egloo](https://github.com/natario1/Egloo), [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
 

@@ -46,7 +46,7 @@ publisher {
 
     sonatype("snapshot") {
         repository = Sonatype.OSSRH_SNAPSHOT_1
-        release.version = "SNAPSHOT"
+        release.version = "latest-SNAPSHOT"
         auth.user = "SONATYPE_USER"
         auth.password = "SONATYPE_PASSWORD"
         signing.key = "SIGNING_KEY"
