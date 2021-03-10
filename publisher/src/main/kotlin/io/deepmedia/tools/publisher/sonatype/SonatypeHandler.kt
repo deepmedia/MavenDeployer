@@ -1,15 +1,16 @@
 package io.deepmedia.tools.publisher.sonatype
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import io.deepmedia.tools.publisher.*
 import io.deepmedia.tools.publisher.Handler
+import io.deepmedia.tools.publisher.checkPublicationCondition
 import io.deepmedia.tools.publisher.checkPublicationField
-import io.deepmedia.tools.publisher.checkPublicationFieldCondition
 import io.deepmedia.tools.publisher.findSecret
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.plugins.signing.SigningExtension
 
 internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(target) {
 
@@ -51,21 +52,27 @@ internal class SonatypeHandler(target: Project) : Handler<SonatypePublication>(t
         target.checkPublicationField(fatal, publication.signing.key, "signing.key")
         target.checkPublicationField(fatal, publication.signing.password, "signing.password")
 
+        // Sources and docs
+        val publishing = target.extensions.getByType(PublishingExtension::class.java)
+        val maven = publication.publication?.let { publishing.publications[it] as? MavenPublication }
+        val hasSources = publication.release.sources != null || (maven != null && maven.hasSources)
+        val hasDocs = publication.release.docs != null || (maven != null && maven.hasDocs)
+        target.checkPublicationCondition(fatal, hasSources, "release.sources") {
+            "This field is required for sonatype publishing."
+        }
+        target.checkPublicationCondition(fatal, hasDocs, "release.docs") {
+            "This field is required for sonatype publishing."
+        }
+
         // Other
-        target.checkPublicationField(fatal, publication.release.sources, "release.sources") {
-            "This field is required for sonatype publishing."
-        }
-        target.checkPublicationField(fatal, publication.release.docs, "release.docs") {
-            "This field is required for sonatype publishing."
-        }
         target.checkPublicationField(fatal, publication.project.url, "project.url") {
             "This field is required for sonatype publishing."
         }
-        target.checkPublicationFieldCondition(fatal, publication.project.licenses.isNotEmpty(),
+        target.checkPublicationCondition(fatal, publication.project.licenses.isNotEmpty(),
             "project.licenses") {
             "Sonatype requires at least one license in publisher.project.licenses."
         }
-        target.checkPublicationFieldCondition(fatal, publication.project.developers.isNotEmpty(),
+        target.checkPublicationCondition(fatal, publication.project.developers.isNotEmpty(),
             "project.developers") {
             "Sonatype requires at least one developer in publisher.project.developers."
         }

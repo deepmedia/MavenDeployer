@@ -143,30 +143,26 @@ open class PublisherPlugin : Plugin<Project> {
         publication: P,
         handler: Handler<P>
     ): TaskProvider<Task> {
-        var mavenPublication: MavenPublication? = null
-        val publishing = target.extensions.getByType(PublishingExtension::class.java)
-        publishing.publications {
-            val container = this
-            if (publication.publication != null) {
-                mavenPublication = container[publication.publication!!] as MavenPublication
-                configureMavenPublication(target, mavenPublication!!, publication, owned = false)
-            } else {
-                mavenPublication = container.create(publication.name, MavenPublication::class) {
-                    configureMavenPublication(target, this, publication, owned = true)
-                }
+
+        val mavenPublications = target.extensions.getByType(PublishingExtension::class.java).publications
+        val mavenPublication = if (publication.publication != null) {
+            mavenPublications[publication.publication!!] as MavenPublication
+        } else {
+            mavenPublications.create(publication.name, MavenPublication::class) {
+                // We have created the publication, so we must have a software component for it.
+                from(target.components[publication.component!!])
             }
         }
+        configureMavenPublication(target, mavenPublication, publication)
 
         // Configure signing if present
         if (publication.signing.key != null || publication.signing.password != null) {
             val signing = target.extensions.getByType(SigningExtension::class)
-            // target.logger.log(LogLevel.WARN, "SIGNING WITH KEY=${publication.signing.key}")
-            // target.logger.log(LogLevel.WARN, "SIGNING WITH PASSWORD=${publication.signing.password}")
             signing.useInMemoryPgpKeys(publication.signing.key, publication.signing.password)
             signing.sign(mavenPublication)
         }
 
-        val publishTask = handler.createPublicationTask(publication, mavenPublication!!)
+        val publishTask = handler.createPublicationTask(publication, mavenPublication)
         val checkTask = target.tasks.register("check${publication.name.capitalize()}") {
             doFirst { checkPublication(target, publication, handler, fatal = true) }
         }
@@ -179,15 +175,20 @@ open class PublisherPlugin : Plugin<Project> {
     private fun configureMavenPublication(
         target: Project,
         maven: MavenPublication,
-        publication: Publication,
-        owned: Boolean
+        publication: Publication
     ) {
-        if (owned) {
-            // We have created the publication, so we must have a software component for it.
-            maven.from(target.components[publication.component!!])
+        publication.release.sources?.let {
+            // Add sources, but not if they are present already! Otherwise publishing will fail.
+            val hasSources = maven.hasSources
+            if (!hasSources) maven.artifact(it) else target.logger.log(LogLevel.WARN,
+                "Couldn't add sources to ${maven.name}, because they are already present.")
         }
-        publication.release.sources?.let { maven.artifact(it) }
-        publication.release.docs?.let { maven.artifact(it) }
+        publication.release.docs?.let {
+            // Add docs, but not if they are present already! Otherwise publishing will fail.
+            val hasDocs = maven.hasDocs
+            if (!hasDocs) maven.artifact(it) else target.logger.log(LogLevel.WARN,
+                "Couldn't add docs to ${maven.name}, because they are already present.")
+        }
         maven.groupId = publication.project.group!!
         maven.artifactId = publication.project.artifact!!
         maven.version = publication.release.version!!

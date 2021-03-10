@@ -10,6 +10,8 @@ import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.publish.maven.MavenArtifact
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.apply
@@ -31,7 +33,7 @@ internal fun Project.checkPublicationField(fatal: Boolean, value: Any?, field: S
     }
 }
 
-internal fun Project.checkPublicationFieldCondition(fatal: Boolean, condition: Boolean, field: String, message: () -> String = { "" }) {
+internal fun Project.checkPublicationCondition(fatal: Boolean, condition: Boolean, field: String, message: () -> String = { "" }) {
     if (fatal) {
         require(condition) { "publisher.$field is not properly set. ${message()}" }
     } else if (!condition) {
@@ -64,6 +66,9 @@ internal fun Project.findSecret(key: String): String? {
     return null
 }
 
+internal val MavenArtifact.isSources get() = classifier == "sources" && extension == "jar"
+internal val MavenPublication.hasSources get() = artifacts.any(MavenArtifact::isSources)
+
 internal fun Project.registerSourcesTask(publication: Publication): TaskProvider<Jar> {
     check(isJava) { "Release.SOURCES_AUTO only works with Java projects." }
     val project = this
@@ -81,6 +86,9 @@ internal fun Project.registerSourcesTask(publication: Publication): TaskProvider
         }
     }
 }
+
+internal val MavenArtifact.isDocs get() = classifier == "javadoc" && extension == "jar"
+internal val MavenPublication.hasDocs get() = artifacts.any(MavenArtifact::isDocs)
 
 internal fun Project.registerDocsTask(publication: Publication): TaskProvider<Jar> {
     check(isKotlin) { "Release.DOCS_AUTO only works in kotlin projects." }

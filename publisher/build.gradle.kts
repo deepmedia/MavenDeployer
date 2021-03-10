@@ -1,4 +1,5 @@
 import io.deepmedia.tools.publisher.common.*
+import io.deepmedia.tools.publisher.sonatype.Sonatype
 
 plugins {
     `kotlin-dsl`
@@ -25,6 +26,12 @@ publisher {
     project.url = "https://github.com/deepmedia/MavenPublisher"
     project.scm = GithubScm("deepmedia", "MavenPublisher")
     project.addLicense(License.APACHE_2_0)
+    project.addDeveloper(
+        name = "natario1",
+        email = "mattia@deepmedia.io",
+        organization = "DeepMedia",
+        url = "deepmedia.io"
+    )
 
     release.version = "0.5.0"
     release.sources = Release.SOURCES_AUTO
@@ -35,12 +42,15 @@ publisher {
         auth.password = "SONATYPE_PASSWORD"
         signing.key = "SIGNING_KEY"
         signing.password = "SIGNING_PASSWORD"
-        project.addDeveloper(
-            name = "natario1",
-            email = "mattia@deepmedia.io",
-            organization = "DeepMedia",
-            url = "deepmedia.io"
-        )
+    }
+
+    sonatype("snapshot") {
+        repository = Sonatype.OSSRH_SNAPSHOT_1
+        release.version = "SNAPSHOT"
+        auth.user = "SONATYPE_USER"
+        auth.password = "SONATYPE_PASSWORD"
+        signing.key = "SIGNING_KEY"
+        signing.password = "SIGNING_PASSWORD"
     }
 
     directory {
