@@ -4,28 +4,36 @@ package io.deepmedia.tools.publisher
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import io.deepmedia.tools.publisher.bintray.BintrayPublicationHandler
+import io.deepmedia.tools.publisher.bintray.BintrayHandler
 import io.deepmedia.tools.publisher.common.Release
-import io.deepmedia.tools.publisher.local.LocalPublicationHandler
+import io.deepmedia.tools.publisher.common.Scm
+import io.deepmedia.tools.publisher.local.LocalHandler
+import io.deepmedia.tools.publisher.sonatype.SonatypeHandler
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.plugins.signing.SigningExtension
 import java.lang.IllegalArgumentException
 
 open class PublisherPlugin : Plugin<Project> {
 
-    private val handlers = mutableListOf<PublicationHandler>()
+    private val handlers = mutableListOf<Handler<*>>()
 
     override fun apply(target: Project) {
         target.plugins.apply("maven-publish")
-        handlers.add(BintrayPublicationHandler(target))
-        handlers.add(LocalPublicationHandler(target))
+        target.plugins.apply("signing")
+
+        handlers.add(BintrayHandler(target))
+        handlers.add(LocalHandler(target))
+        handlers.add(SonatypeHandler(target))
 
         val task = target.tasks.register("publishAll")
         val extension = target.extensions.create("publisher", PublisherExtension::class.java)
@@ -36,17 +44,23 @@ open class PublisherPlugin : Plugin<Project> {
         extension.configuredPublications.all {
             val publication = this
             val handler = handlers.first { it.ownsPublication(publication.name) }
+            handler as Handler<Publication>
             target.afterEvaluate { // For components to be created
                 val default = extension as Publication
                 fillPublication(target, publication, default, handler)
-                checkPublication(target, publication, handler)
+                checkPublication(target, publication, handler, fatal = false)
                 val pubTask = createPublicationTask(target, publication, handler)
                 task.dependsOn(pubTask)
             }
         }
     }
 
-    private fun fillPublication(target: Project, publication: Publication, default: Publication, handler: PublicationHandler) {
+    private fun <P: Publication> fillPublication(
+        target: Project,
+        publication: P,
+        default: Publication,
+        handler: Handler<P>
+    ) {
         publication.publication = publication.publication ?: default.publication
         publication.component = publication.component ?: default.component ?: when {
             target.isAndroidLibrary -> "release"
@@ -56,6 +70,9 @@ open class PublisherPlugin : Plugin<Project> {
         }
 
         // Project data
+        default.project.licenses.forEach(publication.project::addLicense)
+        default.project.developers.forEach(publication.project::addDeveloper)
+
         publication.project.name = publication.project.name
             ?: default.project.name ?: target.rootProject.name
         publication.project.group = publication.project.group
@@ -63,8 +80,12 @@ open class PublisherPlugin : Plugin<Project> {
         val base = target.convention.getPlugin(BasePluginConvention::class.java)
         publication.project.artifact = publication.project.artifact
             ?: default.project.artifact ?: base.archivesBaseName
-        publication.project.vcsUrl = publication.project.vcsUrl
-            ?: default.project.vcsUrl ?: publication.project.url ?: default.project.url
+        publication.project.url = publication.project.url ?: default.project.url
+
+        val deprecatedVcsUrl = publication.project.vcsUrl
+            ?: default.project.vcsUrl ?: publication.project.url
+        publication.project.scm = publication.project.scm
+            ?: default.project.scm ?: deprecatedVcsUrl?.let { Scm(it) }
         publication.project.packaging = publication.project.packaging
             ?: default.project.packaging ?: when {
                 publication.publication != null -> null // we'll use the MavenPublication packaging
@@ -80,10 +101,13 @@ open class PublisherPlugin : Plugin<Project> {
             } else {
                 target.version.toString()
             }
-        publication.release.vcsTag = publication.release.vcsTag
-            ?: default.release.vcsTag ?: "v${publication.release.version!!}"
+        publication.release.tag = publication.release.tag
+            ?: default.release.tag
+                    ?: publication.release.vcsTag
+                    ?: default.release.vcsTag
+                    ?: "v${publication.release.version!!}"
         publication.release.description = publication.release.description
-            ?: default.release.description ?: "${publication.project.name!!} ${publication.release.vcsTag!!}"
+            ?: default.release.description ?: "${publication.project.name!!} ${publication.release.tag!!}"
         publication.release.sources = publication.release.sources ?: default.release.sources
         publication.release.docs = publication.release.docs ?: default.release.docs
 
@@ -95,17 +119,30 @@ open class PublisherPlugin : Plugin<Project> {
             publication.release.docs = target.registerDocsTask(publication)
         }
 
+        // Signing support
+        publication.signing.key = target.findSecret(publication.signing.key ?: "signing.key")
+        publication.signing.password = target.findSecret(publication.signing.password ?: "signing.password")
+
         // Give handler a chance
         handler.fillPublication(publication)
     }
 
-    private fun checkPublication(target: Project, publication: Publication, handler: PublicationHandler) {
-        handler.checkPublication(publication)
+    private fun <P: Publication> checkPublication(
+        target: Project,
+        publication: P,
+        handler: Handler<P>,
+        fatal: Boolean
+    ) {
+        handler.checkPublication(publication, fatal)
     }
 
     // https://developer.android.com/studio/build/maven-publish-plugin
     @Suppress("UnstableApiUsage")
-    private fun createPublicationTask(target: Project, publication: Publication, handler: PublicationHandler): TaskProvider<Task> {
+    private fun <P: Publication> createPublicationTask(
+        target: Project,
+        publication: P,
+        handler: Handler<P>
+    ): TaskProvider<Task> {
         var mavenPublication: MavenPublication? = null
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.publications {
@@ -120,13 +157,31 @@ open class PublisherPlugin : Plugin<Project> {
             }
         }
 
-        val tasks = handler.createPublicationTasks(publication, mavenPublication!!)
+        // Configure signing if present
+        if (publication.signing.key != null || publication.signing.password != null) {
+            val signing = target.extensions.getByType(SigningExtension::class)
+            // target.logger.log(LogLevel.WARN, "SIGNING WITH KEY=${publication.signing.key}")
+            // target.logger.log(LogLevel.WARN, "SIGNING WITH PASSWORD=${publication.signing.password}")
+            signing.useInMemoryPgpKeys(publication.signing.key, publication.signing.password)
+            signing.sign(mavenPublication)
+        }
+
+        val publishTask = handler.createPublicationTask(publication, mavenPublication!!)
+        val checkTask = target.tasks.register("check${publication.name.capitalize()}") {
+            doFirst { checkPublication(target, publication, handler, fatal = true) }
+        }
         return target.tasks.register("publishTo${publication.name.capitalize()}") {
-            dependsOn(*tasks.toList().toTypedArray())
+            dependsOn(checkTask)
+            finalizedBy(publishTask)
         }
     }
 
-    private fun configureMavenPublication(target: Project, maven: MavenPublication, publication: Publication, owned: Boolean) {
+    private fun configureMavenPublication(
+        target: Project,
+        maven: MavenPublication,
+        publication: Publication,
+        owned: Boolean
+    ) {
         if (owned) {
             // We have created the publication, so we must have a software component for it.
             maven.from(target.components[publication.component!!])
@@ -148,11 +203,23 @@ open class PublisherPlugin : Plugin<Project> {
                 }
             }
         }
+        maven.pom.developers {
+            publication.project.developers.forEach {
+                developer {
+                    name.set(it.name)
+                    email.set(it.email)
+                    it.organization?.let { organization.set(it) }
+                    it.url?.let { organizationUrl.set(it) }
+                }
+            }
+        }
         maven.pom.scm {
-            publication.project.vcsUrl?.let { connection.set(it) }
-            publication.project.vcsUrl?.let { developerConnection.set(it) }
-            publication.project.url?.let { url.set(it) }
-            publication.release.vcsTag?.let { tag.set(it) }
+            tag.set(publication.release.tag!!)
+            publication.project.scm?.let {
+                url.set(it.source(publication.release.tag!!))
+                it.connection?.let { connection.set(it) }
+                it.developerConnection?.let { developerConnection.set(it) }
+            }
         }
     }
 }

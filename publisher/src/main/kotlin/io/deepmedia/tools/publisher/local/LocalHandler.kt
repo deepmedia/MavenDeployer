@@ -1,13 +1,12 @@
 package io.deepmedia.tools.publisher.local
 
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import io.deepmedia.tools.publisher.Publication
-import io.deepmedia.tools.publisher.PublicationHandler
+import io.deepmedia.tools.publisher.Handler
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 
-internal class LocalPublicationHandler(target: Project) : PublicationHandler(target) {
+internal class LocalHandler(target: Project) : Handler<LocalPublication>(target) {
 
     companion object {
         internal const val PREFIX = "directory"
@@ -16,16 +15,24 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
     private val allTask = target.tasks.register("publishAll${PREFIX.capitalize()}")
 
     override fun ownsPublication(name: String) = name.startsWith(PREFIX)
-    override fun createPublication(name: String) = LocalPublication(name)
-    override fun fillPublication(publication: Publication) = Unit
 
-    override fun checkPublication(publication: Publication) {
-        publication as LocalPublication
-        checkPublicationField(publication.directory, "directory", false)
+    override fun createPublication(name: String) = LocalPublication(name)
+
+    override fun fillPublication(publication: LocalPublication) {
+        // Not needed, done later.
+        /** publication.directory = publication.directory ?: runCatching {
+            val locations = DefaultMavenFileLocations()
+            val settings = DefaultMavenSettingsProvider(locations)
+            val locator = DefaultLocalMavenRepositoryLocator(settings)
+            locator.localMavenRepository.absolutePath
+        }.getOrNull() */
     }
 
-    override fun createPublicationTasks(publication: Publication, mavenPublication: MavenPublication): Iterable<String> {
-        publication as LocalPublication
+    override fun checkPublication(publication: LocalPublication, fatal: Boolean) {
+        // checkPublicationField(publication.directory, "directory", false)
+    }
+
+    override fun createPublicationTask(publication: LocalPublication, mavenPublication: MavenPublication): String {
         val mavenRepository = publication.name // whatever
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         publishing.repositories {
@@ -40,8 +47,8 @@ internal class LocalPublicationHandler(target: Project) : PublicationHandler(tar
                 }
             }
         }
-        val publishTask = "publish${mavenPublication.name.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository"
-        allTask.dependsOn(publishTask)
-        return setOf(publishTask)
+        return "publish${mavenPublication.name.capitalize()}PublicationTo${mavenRepository.capitalize()}Repository".also {
+            allTask.dependsOn(it)
+        }
     }
 }

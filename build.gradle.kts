@@ -1,12 +1,12 @@
 buildscript {
     repositories {
         maven("publisher/build/prebuilt")
-        maven("https://dl.bintray.com/deepmedia/tools")
+        mavenCentral()
         jcenter()
         google()
     }
     dependencies {
-        classpath("io.deepmedia.tools:publisher:0.4.0")
+        classpath("io.deepmedia.tools:publisher:0.5.0-rc03")
     }
 }
 

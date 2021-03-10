@@ -23,22 +23,35 @@ publisher {
     project.description = "A lightweight, handy tool for publishing maven packages to different kinds of repositories."
     project.group = "io.deepmedia.tools"
     project.url = "https://github.com/deepmedia/MavenPublisher"
-    project.vcsUrl = "https://github.com/deepmedia/MavenPublisher.git"
+    project.scm = GithubScm("deepmedia", "MavenPublisher")
     project.addLicense(License.APACHE_2_0)
-    release.version = "0.4.1"
+
+    release.version = "0.5.0"
     release.sources = Release.SOURCES_AUTO
     release.docs = Release.DOCS_AUTO
+
+    sonatype {
+        auth.user = "SONATYPE_USER"
+        auth.password = "SONATYPE_PASSWORD"
+        signing.key = "SIGNING_KEY"
+        signing.password = "SIGNING_PASSWORD"
+        project.addDeveloper(
+            name = "natario1",
+            email = "mattia@deepmedia.io",
+            organization = "DeepMedia",
+            url = "deepmedia.io"
+        )
+    }
+
+    directory {
+        directory = "build/prebuilt"
+        signing.key = "SIGNING_KEY"
+        signing.password = "SIGNING_PASSWORD"
+    }
 
     bintray {
         auth.user = "BINTRAY_USER"
         auth.key = "BINTRAY_KEY"
         auth.repo = "BINTRAY_REPO"
-    }
-
-    directory {
-        directory = "build/prebuilt"
-    }
-    directory("local") {
-        directory = file(repositories.mavenLocal().url).absolutePath
     }
 }
