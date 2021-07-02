@@ -13,8 +13,8 @@ open class PublisherExtension : Publication by DefaultPublication("default") {
     internal lateinit var publications: NamedDomainObjectContainer<Publication>
     internal lateinit var configuredPublications: NamedDomainObjectContainer<Publication>
 
-    fun bintray(name: String = BintrayHandler.PREFIX, configure: BintrayPublication.() -> Unit = {})
-            = add(BintrayHandler.PREFIX, name, configure)
+    fun bintray(name: String = "bintray", configure: BintrayPublication.() -> Unit = {}): Nothing
+            = error("Bintray publications are not allowed anymore")
 
     fun directory(name: String = LocalHandler.PREFIX, configure: LocalPublication.() -> Unit = {})
             = add(LocalHandler.PREFIX, name, configure)

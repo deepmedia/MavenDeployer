@@ -257,6 +257,8 @@ the root level values. Note also that all `auth` and `signing` fields are [Secre
 
 ## Bintray publisher
 
+> As of version 0.6.0, the Bintray publisher has been removed.
+
 In addition to the common configuration fields, to authenticate to Bintray, you will need to pass
 a user name, a user key and the Bintray repo name as follows:
 
