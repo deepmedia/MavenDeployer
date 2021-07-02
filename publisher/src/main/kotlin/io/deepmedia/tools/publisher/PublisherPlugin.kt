@@ -16,6 +16,8 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
+import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
@@ -145,14 +147,31 @@ open class PublisherPlugin : Plugin<Project> {
     ): TaskProvider<Task> {
 
         val mavenPublications = target.extensions.getByType(PublishingExtension::class.java).publications
-        val mavenPublication = if (publication.publication != null) {
-            mavenPublications[publication.publication!!] as MavenPublication
-        } else {
-            mavenPublications.create(publication.name, MavenPublication::class) {
+        val mavenSourcePublication = publication.publication?.let { mavenPublications[it] as MavenPublication }
+        val mavenPublication = when {
+            mavenSourcePublication == null -> {
                 // We have created the publication, so we must have a software component for it.
-                from(target.components[publication.component!!])
+                mavenPublications.create(publication.name, MavenPublication::class) {
+                    from(target.components[publication.component!!])
+                }
             }
+            publication.clonePublication -> {
+                mavenPublications.create(publication.name, MavenPublication::class) {
+                    // Cloning artifacts is tricky - from() will copy some of them, there might
+                    // be more, and we can't allow duplicates.
+                    mavenSourcePublication as MavenPublicationInternal
+                    from(mavenSourcePublication.component!!)
+                    mavenSourcePublication.artifacts.forEach {
+                        val contained = artifacts.any { a ->
+                            a.classifier == it.classifier && a.extension == it.extension
+                        }
+                        if (!contained) artifact(it)
+                    }
+                }
+            }
+            else -> mavenSourcePublication
         }
+
         configureMavenPublication(target, mavenPublication, publication)
 
         // Configure signing if present
@@ -184,6 +203,7 @@ open class PublisherPlugin : Plugin<Project> {
         maven: MavenPublication,
         publication: Publication
     ) {
+
         publication.release.sources?.let {
             // Add sources, but not if they are present already! Otherwise publishing will fail.
             val hasSources = maven.hasSources
