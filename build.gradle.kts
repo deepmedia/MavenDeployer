@@ -1,26 +1,26 @@
 buildscript {
     repositories {
         maven("publisher/build/prebuilt")
-        val localProperties = file("local.properties")
-        if (localProperties.exists()) {
-            val map = java.util.Properties().apply {
-                localProperties.inputStream().use { load(it) }
-            }
-            val user = map.getProperty("GITHUB_USER")
-            val token = map.getProperty("GITHUB_PERSONAL_ACCESS_TOKEN")
-            if (user.isNotEmpty() && token.isNotEmpty()) {
-                maven {
-                    url = uri("https://maven.pkg.github.com/deepmedia/MavenPublisher")
-                    credentials.username = user
-                    credentials.password = token
-                }
+        val props = java.util.Properties().apply {
+            file("local.properties")
+                .takeIf { it.exists() }
+                ?.inputStream()
+                .use { load(it) }
+        }
+        val user: String? = "GITHUB_USER".let { props.getProperty(it) ?: System.getenv(it) }
+        val token: String? = "GITHUB_PERSONAL_ACCESS_TOKEN".let { props.getProperty(it) ?: System.getenv(it) }
+        if (!user.isNullOrEmpty() && !token.isNullOrEmpty()) {
+            maven {
+                url = uri("https://maven.pkg.github.com/deepmedia/MavenPublisher")
+                credentials.username = user
+                credentials.password = token
             }
         }
         mavenCentral()
         google()
     }
     dependencies {
-        classpath("io.deepmedia.tools:publisher:0.6.0")
+        classpath("io.deepmedia.tools:publisher:0.7.0-rc1")
     }
 }
 
