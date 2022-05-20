@@ -5,7 +5,7 @@ buildscript {
             file("local.properties")
                 .takeIf { it.exists() }
                 ?.inputStream()
-                .use { load(it) }
+                ?.use { load(it) }
         }
         val user: String? = "GHUB_USER".let { props.getProperty(it) ?: System.getenv(it) }
         val token: String? = "GHUB_PERSONAL_ACCESS_TOKEN".let { props.getProperty(it) ?: System.getenv(it) }
