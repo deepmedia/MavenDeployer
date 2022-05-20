@@ -5,17 +5,17 @@ package io.deepmedia.tools.publisher
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidBasePlugin
-import io.deepmedia.tools.publisher.Publication
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.maven.MavenArtifact
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.getPlugin
 import org.jetbrains.dokka.gradle.DokkaPlugin
 import org.jetbrains.dokka.gradle.DokkaTask
@@ -78,8 +78,8 @@ internal fun Project.registerSourcesTask(publication: Publication): TaskProvider
             val android = project.extensions["android"] as BaseExtension
             from(android.sourceSets["main"].java.srcDirs)
         } else {
-            val convention: JavaPluginConvention = project.convention.getPlugin()
-            val sourceSet = convention.sourceSets["main"]
+            val java: JavaPluginExtension = project.extensions.getByType()
+            val sourceSet = java.sourceSets["main"]
             from(sourceSet.allSource)
             // or: val sourceSets = project.extensions["sourceSets"] as SourceSetContainer
             // but this is safer.

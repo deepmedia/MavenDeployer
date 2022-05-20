@@ -8,9 +8,9 @@ plugins {
 }
 
 dependencies {
-    api("com.android.tools.build:gradle:4.2.2") // android gradle plugin
-    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.20") // kotlin gradle plugin
-    api("org.jetbrains.dokka:dokka-gradle-plugin:1.4.32") // dokka for docs
+    api("com.android.tools.build:gradle:7.0.4") // android gradle plugin
+    api("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.21") // kotlin gradle plugin
+    api("org.jetbrains.dokka:dokka-gradle-plugin:1.6.20") // dokka for docs
     api(gradleApi()) // gradle
     api(gradleKotlinDsl()) // not sure if needed
     api(localGroovy()) // groovy
@@ -32,7 +32,7 @@ publisher {
         url = "deepmedia.io"
     )
 
-    release.version = "0.6.0"
+    release.version = "0.7.0"
     release.sources = Release.SOURCES_AUTO
     release.docs = Release.DOCS_AUTO
 
@@ -56,5 +56,12 @@ publisher {
         directory = "build/prebuilt"
         signing.key = "SIGNING_KEY"
         signing.password = "SIGNING_PASSWORD"
+    }
+
+    github {
+        repository = "MavenPublisher"
+        owner = "deepmedia"
+        auth.user = "GHUB_USER"
+        auth.token = "GHUB_PERSONAL_ACCESS_TOKEN"
     }
 }
