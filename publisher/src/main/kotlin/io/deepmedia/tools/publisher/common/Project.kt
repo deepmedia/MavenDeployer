@@ -11,9 +11,6 @@ open class Project {
     // possibly empty
     var scm: Scm? = null
 
-    @Deprecated("Use scm")
-    var vcsUrl: String? = null
-
     var group: String? = null
 
     var artifact: String? = null

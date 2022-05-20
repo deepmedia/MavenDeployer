@@ -8,24 +8,25 @@ A lightweight, handy tool for publishing your maven packages (for example, Andro
 to different kinds of maven repositories. It supports publishing into:
 - local directories, to use them as local maven repositories in other projects
 - Sonatype Nexus repositories, including [Sonatype OSSRH / Maven Central](https://central.sonatype.org/)
-- Bintray's [JCenter](https://bintray.com), soon to be deprecated
+- [GitHub Packages](https://docs.github.com/en/packages)
+- ~~Bintray's [JCenter](https://bintray.com), removed in v0.6.0~~
 
 To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
 ```kotlin
 buildscript {
     repositories {
-        mavenCentral()
+        mavenCentral() // or github packages
         google()
     }
     dependencies {
-        classpath("io.deepmedia.tools:publisher:0.5.0")
+        classpath("io.deepmedia.tools:publisher:0.7.0")
     }
 }
 ```
 
-The publisher plugin uses an older version of itself to publish itself into the Maven Central repository.
-This means that you can check the plugin source code to see an example of how to use it.
+The publisher plugin uses an older version of itself to publish itself into the Maven Central repository
+and in GitHub Packages. This means that you can check the plugin source code to see an example of how to use it.
 
 It also uses itself to publish snapshots to `https://s01.oss.sonatype.org/content/repositories/snapshots/`
 on each push to main. To use the snapshots, add the url as a maven repository and depend on
@@ -109,7 +110,7 @@ publisher {
     project.name = "Project name"
     project.description = "Project description"
 
-    bintray {
+    sonatype {
         // Override some fields or add missing ones
         project.name = "Project name for bintray"
         release.version = "1.0.0-nightly"
@@ -177,6 +178,9 @@ publisher {
     directory("abc") {
         // Local dir configuration...
     }
+    github {
+        // Github configuration...
+    }
 }
 ```
 
@@ -187,8 +191,10 @@ In the example above, the following tasks will be available:
 - `:publishToSonatypeBar`: publishes the `bar` sonatype configuration
 - `:publishToDirectory`: publishes the default directory configuration
 - `:publishToDirectoryAbc`: publishes the `abc` sonatype configuration
+- `:publishToGithub`: publishes the default github configuration
 - `:publishAllSonatype`: publishes all "sonatype" publications
 - `:publishAllDirectory`: publishes all "directory" publications
+- `:publishAllGithub`: publishes all "github" publications
 - `:publishAll`: publishes everything
 
 ## Local repository publisher
@@ -252,7 +258,38 @@ publisher {
 }
 ```
 
-As described earlier, all the configuration fields that are set in the `bintray` block will override
+As described earlier, all the configuration fields that are set in the `sonatype` block will override
+the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
+
+## Github Packages publisher
+
+In addition to the common configuration fields, the github publisher requires repository name (like `MavenPublisher`), 
+repository owner name (like `deepmedia`) and authentication information. To authenticate, a 
+[personal access token](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries) 
+is required, along with the GitHub username associated with it.
+
+```kotlin
+publisher {
+    // Common configuration...
+    project.description = "Handy tool to publish maven packages in different repositories."
+
+    github {
+        // Identify the GitHub repository: deepmedia/MavenPublisher
+        owner = "deepmedia"
+        repository = "MavenPublisher"
+
+        auth.user = "GITHUB_USER" // defaults to "auth.user"
+        auth.token = "GITHUB_PERSONAL_ACCESS_TOKEN" // defaults to "auth.token"
+    }
+
+    // If needed, you can add other named publications.
+    github("private") {
+        ...
+    }
+}
+```
+
+As described earlier, all the configuration fields that are set in the `sonatype` block will override
 the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
 
 ## Bintray publisher

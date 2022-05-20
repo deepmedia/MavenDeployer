@@ -3,6 +3,8 @@ package io.deepmedia.tools.publisher
 import io.deepmedia.tools.publisher.bintray.BintrayPublication
 import io.deepmedia.tools.publisher.bintray.BintrayHandler
 import io.deepmedia.tools.publisher.common.DefaultPublication
+import io.deepmedia.tools.publisher.github.GithubHandler
+import io.deepmedia.tools.publisher.github.GithubPublication
 import io.deepmedia.tools.publisher.local.LocalPublication
 import io.deepmedia.tools.publisher.local.LocalHandler
 import io.deepmedia.tools.publisher.sonatype.SonatypePublication
@@ -21,6 +23,9 @@ open class PublisherExtension : Publication by DefaultPublication("default") {
 
     fun sonatype(name: String = SonatypeHandler.PREFIX, configure: SonatypePublication.() -> Unit = {})
             = add(SonatypeHandler.PREFIX, name, configure)
+
+    fun github(name: String = GithubHandler.PREFIX, configure: GithubPublication.() -> Unit = {})
+            = add(GithubHandler.PREFIX, name, configure)
 
     private inline fun <reified P : Publication> add(prefix: String, name: String, configure: P.() -> Unit) {
         val publicationName = if (!name.startsWith(prefix)) {

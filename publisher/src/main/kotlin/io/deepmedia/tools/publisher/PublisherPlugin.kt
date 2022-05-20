@@ -7,19 +7,20 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import io.deepmedia.tools.publisher.bintray.BintrayHandler
 import io.deepmedia.tools.publisher.common.Release
 import io.deepmedia.tools.publisher.common.Scm
+import io.deepmedia.tools.publisher.github.GithubHandler
 import io.deepmedia.tools.publisher.local.LocalHandler
 import io.deepmedia.tools.publisher.sonatype.SonatypeHandler
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.logging.LogLevel
-import org.gradle.api.plugins.BasePluginConvention
+import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.plugins.signing.SigningExtension
@@ -36,6 +37,7 @@ open class PublisherPlugin : Plugin<Project> {
         handlers.add(BintrayHandler(target))
         handlers.add(LocalHandler(target))
         handlers.add(SonatypeHandler(target))
+        handlers.add(GithubHandler(target))
 
         val task = target.tasks.register("publishAll")
         val extension = target.extensions.create("publisher", PublisherExtension::class.java)
@@ -79,15 +81,13 @@ open class PublisherPlugin : Plugin<Project> {
             ?: default.project.name ?: target.rootProject.name
         publication.project.group = publication.project.group
             ?: default.project.group ?: target.group.toString()
-        val base = target.convention.getPlugin(BasePluginConvention::class.java)
         publication.project.artifact = publication.project.artifact
-            ?: default.project.artifact ?: base.archivesBaseName
+            ?: default.project.artifact
+                    ?: target.extensions.findByType<BasePluginExtension>()?.archivesName?.orNull
         publication.project.url = publication.project.url ?: default.project.url
-
-        val deprecatedVcsUrl = publication.project.vcsUrl
-            ?: default.project.vcsUrl ?: publication.project.url
         publication.project.scm = publication.project.scm
-            ?: default.project.scm ?: deprecatedVcsUrl?.let { Scm(it) }
+            ?: default.project.scm
+                    ?: publication.project.url?.let { Scm(it) }
         publication.project.packaging = publication.project.packaging
             ?: default.project.packaging ?: when {
                 publication.publication != null -> null // we'll use the MavenPublication packaging
