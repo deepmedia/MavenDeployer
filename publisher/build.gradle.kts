@@ -61,7 +61,7 @@ publisher {
     github {
         repository = "MavenPublisher"
         owner = "deepmedia"
-        auth.user = "GITHUB_USER"
-        auth.token = "GITHUB_PERSONAL_ACCESS_TOKEN"
+        auth.user = "GHUB_USER"
+        auth.token = "GHUB_PERSONAL_ACCESS_TOKEN"
     }
 }

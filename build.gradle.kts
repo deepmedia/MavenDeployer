@@ -7,8 +7,8 @@ buildscript {
                 ?.inputStream()
                 .use { load(it) }
         }
-        val user: String? = "GITHUB_USER".let { props.getProperty(it) ?: System.getenv(it) }
-        val token: String? = "GITHUB_PERSONAL_ACCESS_TOKEN".let { props.getProperty(it) ?: System.getenv(it) }
+        val user: String? = "GHUB_USER".let { props.getProperty(it) ?: System.getenv(it) }
+        val token: String? = "GHUB_PERSONAL_ACCESS_TOKEN".let { props.getProperty(it) ?: System.getenv(it) }
         if (!user.isNullOrEmpty() && !token.isNullOrEmpty()) {
             maven {
                 url = uri("https://maven.pkg.github.com/deepmedia/MavenPublisher")
