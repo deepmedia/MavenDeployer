@@ -1,7 +1,5 @@
 package io.deepmedia.tools.publisher
 
-import io.deepmedia.tools.publisher.bintray.BintrayPublication
-import io.deepmedia.tools.publisher.bintray.BintrayHandler
 import io.deepmedia.tools.publisher.common.DefaultPublication
 import io.deepmedia.tools.publisher.github.GithubHandler
 import io.deepmedia.tools.publisher.github.GithubPublication
@@ -14,9 +12,6 @@ import org.gradle.api.NamedDomainObjectContainer
 open class PublisherExtension : Publication by DefaultPublication("default") {
     internal lateinit var publications: NamedDomainObjectContainer<Publication>
     internal lateinit var configuredPublications: NamedDomainObjectContainer<Publication>
-
-    fun bintray(name: String = "bintray", configure: BintrayPublication.() -> Unit = {}): Nothing
-            = error("Bintray publications are not allowed anymore")
 
     fun directory(name: String = LocalHandler.PREFIX, configure: LocalPublication.() -> Unit = {})
             = add(LocalHandler.PREFIX, name, configure)

@@ -4,7 +4,6 @@ package io.deepmedia.tools.publisher
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import io.deepmedia.tools.publisher.bintray.BintrayHandler
 import io.deepmedia.tools.publisher.common.Release
 import io.deepmedia.tools.publisher.common.Scm
 import io.deepmedia.tools.publisher.github.GithubHandler
@@ -34,7 +33,6 @@ open class PublisherPlugin : Plugin<Project> {
         target.plugins.apply("maven-publish")
         target.plugins.apply("signing")
 
-        handlers.add(BintrayHandler(target))
         handlers.add(LocalHandler(target))
         handlers.add(SonatypeHandler(target))
         handlers.add(GithubHandler(target))

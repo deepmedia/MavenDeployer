@@ -12,7 +12,7 @@ package io.deepmedia.tools.publisher.sonatype
  * SIGNING KEYS
  * https://central.sonatype.org/pages/working-with-pgp-signatures.html#distributing-your-public-key
  *
- * 1. generate the key: gpg --full-generate-key . Use 2048 bits and make it never expire.
+ * 1. generate the key: gpg --gen-key .
  *    Add name, email and no comment. Choose a password. The final message will already contain
  *    the key id (something like 2AC2B402AAEF6516), but otherwise it can also be retrieved with
  *    gpg --list-secret-keys --keyid-format LONG . The desired ID is in the "sec" line, after the slash.
