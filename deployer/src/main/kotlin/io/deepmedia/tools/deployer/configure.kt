@@ -90,8 +90,8 @@ internal fun Project.configureSigning(
     if (spec.hasSigning()) {
         log { "${spec.name}: signing MavenPublication ${maven.name}" }
         val ext = extensions.getByType(SigningExtension::class)
-        val key = getSecretOrThrow(spec.signing.key.get(), "spec.signing.key")
-        val password = getSecretOrThrow(spec.signing.password.get(), "spec.signing.password")
+        val key = spec.signing.key.get().resolve(this, "spec.signing.key")
+        val password = spec.signing.password.get().resolve(this, "spec.signing.password")
         ext.useInMemoryPgpKeys(key, password)
         try {
             ext.sign(maven)

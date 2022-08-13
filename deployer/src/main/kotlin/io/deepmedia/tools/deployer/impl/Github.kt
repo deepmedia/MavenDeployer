@@ -1,10 +1,10 @@
 package io.deepmedia.tools.deployer.impl
 
 import io.deepmedia.tools.deployer.fallback
-import io.deepmedia.tools.deployer.getSecretOrThrow
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
+import io.deepmedia.tools.deployer.model.Secret
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -17,7 +17,7 @@ import javax.inject.Inject
 class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<GithubAuth>(objects, name, GithubAuth::class) {
 
-    val owner: Property<String> = objects.property<String>().convention(auth.user)
+    val owner: Property<String> = objects.property()
     val repository: Property<String> = objects.property()
 
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
@@ -26,8 +26,8 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
         return repositories.maven {
             this.name = "$owner/$repo".hashCode().toString()
             this.url = target.uri("https://maven.pkg.github.com/$owner/$repo")
-            credentials.username = target.getSecretOrThrow(auth.user.get(), "spec.auth.user")
-            credentials.password = target.getSecretOrThrow(auth.token.get(), "spec.auth.token")
+            credentials.username = auth.user.get().resolve(target, "spec.auth.user")
+            credentials.password = auth.token.get().resolve(target, "spec.auth.token")
         }
     }
 
@@ -41,10 +41,10 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
 
 open class GithubAuth @Inject constructor(objects: ObjectFactory) : Auth() {
     /** GitHub username. */
-    val user: Property<String> = objects.property()
+    val user: Property<Secret> = objects.property()
 
     /** GitHub personal access token. */
-    val token: Property<String> = objects.property()
+    val token: Property<Secret> = objects.property()
 
     override fun fallback(to: Auth) {
         if (to is GithubAuth) {

@@ -1,12 +1,12 @@
 package io.deepmedia.tools.deployer.impl
 
 import io.deepmedia.tools.deployer.fallback
-import io.deepmedia.tools.deployer.getSecretOrThrow
 import io.deepmedia.tools.deployer.isJavadocJar
 import io.deepmedia.tools.deployer.isSourcesJar
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
+import io.deepmedia.tools.deployer.model.Secret
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -35,8 +35,8 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         val repo = repositoryUrl.get()
         return repositories.maven(repo) {
             this.name = abs(repo.hashCode()).toString()
-            credentials.username = target.getSecretOrThrow(auth.user.get(), "spec.auth.user")
-            credentials.password = target.getSecretOrThrow(auth.password.get(), "spec.auth.password")
+            credentials.username = auth.user.get().resolve(target, "spec.auth.user")
+            credentials.password = auth.password.get().resolve(target, "spec.auth.password")
         }
     }
 
@@ -84,8 +84,8 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 }
 
 open class SonatypeAuth @Inject constructor(objects: ObjectFactory) : Auth() {
-    val user: Property<String> = objects.property()
-    val password: Property<String> = objects.property()
+    val user: Property<Secret> = objects.property()
+    val password: Property<Secret> = objects.property()
 
     override fun fallback(to: Auth) {
         if (to is SonatypeAuth) {

@@ -10,7 +10,7 @@ import org.gradle.kotlin.dsl.polymorphicDomainObjectContainer
 import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 
-open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) {
+open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) : SecretScope {
 
     val verbose = target.objects.property<Boolean>().convention(false)
 

@@ -3,7 +3,7 @@ import io.deepmedia.tools.deployer.impl.SonatypeAuth
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.8.0-rc01"
+    id("io.deepmedia.tools.deployer") version "0.8.0-rc04"
 }
 
 dependencies {
@@ -25,7 +25,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.8.0-rc03"
+version = "0.8.0-rc05"
 
 deployer {
     defaultSpec {
@@ -37,8 +37,8 @@ deployer {
             developer("natario1", "mattia@deepmedia.io", "DeepMedia", "https://deepmedia.io")
         }
         signing {
-            key.set("SIGNING_KEY")
-            password.set("SIGNING_PASSWORD")
+            key.set(secret("SIGNING_KEY"))
+            password.set(secret("SIGNING_PASSWORD"))
         }
     }
 
@@ -46,8 +46,8 @@ deployer {
     localSpec()
 
     val sonatypeAuth: SonatypeAuth.() -> Unit = {
-        user.set("SONATYPE_USER")
-        password.set("SONATYPE_PASSWORD")
+        user.set(secret("SONATYPE_USER"))
+        password.set(secret("SONATYPE_PASSWORD"))
     }
 
     // use "deploySonatype" to deploy to OSSRH / maven central
@@ -66,8 +66,10 @@ deployer {
     githubSpec {
         repository.set("MavenDeployer")
         owner.set("deepmedia")
-        auth.user.set("GHUB_USER")
-        auth.token.set("GHUB_PERSONAL_ACCESS_TOKEN")
+        auth {
+            user.set(secret("GHUB_USER"))
+            token.set(secret("GHUB_PERSONAL_ACCESS_TOKEN"))
+        }
     }
 }
 
