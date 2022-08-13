@@ -40,8 +40,8 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         }
     }
 
-    override fun hasSigning(): Boolean {
-        require(super.hasSigning()) {
+    override fun hasSigning(target: Project): Boolean {
+        require(super.hasSigning(target)) {
             "Signing is mandatory for Sonatype deployments. Please add spec.signing.key and spec.signing.password."
         }
         return true

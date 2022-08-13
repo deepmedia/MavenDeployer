@@ -2,6 +2,7 @@ package io.deepmedia.tools.deployer.model
 
 import org.gradle.api.Action
 import org.gradle.api.Named
+import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
@@ -66,8 +67,10 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.resolve(target, this)
     }
 
-    internal open fun hasSigning(): Boolean {
-        return signing.key.isPresent || signing.password.isPresent
+    internal open fun hasSigning(target: Project): Boolean {
+        val hasKey = signing.key.isPresent && runCatching { signing.key.get().resolve(target, "") }.isSuccess
+        val hasPwd = signing.password.isPresent && runCatching { signing.password.get().resolve(target, "") }.isSuccess
+        return hasKey || hasPwd
     }
 
     internal abstract fun createMavenRepository(

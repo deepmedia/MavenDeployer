@@ -87,7 +87,7 @@ internal fun Project.configureSigning(
     maven: MavenPublication,
 ) {
     // Configure signing if present
-    if (spec.hasSigning()) {
+    if (spec.hasSigning(this)) {
         log { "${spec.name}: signing MavenPublication ${maven.name}" }
         val ext = extensions.getByType(SigningExtension::class)
         val key = spec.signing.key.get().resolve(this, "spec.signing.key")
