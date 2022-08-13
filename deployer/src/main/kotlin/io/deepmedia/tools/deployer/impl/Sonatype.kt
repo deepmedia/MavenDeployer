@@ -35,9 +35,12 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         val repo = repositoryUrl.get()
         return repositories.maven(repo) {
             this.name = abs(repo.hashCode()).toString()
-            credentials.username = auth.user.get().resolve(target, "spec.auth.user")
-            credentials.password = auth.password.get().resolve(target, "spec.auth.password")
         }
+    }
+
+    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+        repository.credentials.username = auth.user.get().resolve(target, "spec.auth.user")
+        repository.credentials.password = auth.password.get().resolve(target, "spec.auth.password")
     }
 
     override fun hasSigning(target: Project): Boolean {

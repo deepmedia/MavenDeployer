@@ -26,9 +26,12 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
         return repositories.maven {
             this.name = "$owner/$repo".hashCode().toString()
             this.url = target.uri("https://maven.pkg.github.com/$owner/$repo")
-            credentials.username = auth.user.get().resolve(target, "spec.auth.user")
-            credentials.password = auth.token.get().resolve(target, "spec.auth.token")
         }
+    }
+
+    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+        repository.credentials.username = auth.user.get().resolve(target, "spec.auth.user")
+        repository.credentials.password = auth.token.get().resolve(target, "spec.auth.token")
     }
 
     override fun fallback(to: DeploySpec) {

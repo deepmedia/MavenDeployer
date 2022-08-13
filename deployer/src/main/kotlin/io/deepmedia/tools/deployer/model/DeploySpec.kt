@@ -59,7 +59,7 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.fallback(to.signing)
     }
 
-    internal fun resolve(target: org.gradle.api.Project) {
+    internal fun resolve(target: Project) {
         content.resolve(target, this)
         auth.resolve(target, this)
         projectInfo.resolve(target, this)
@@ -73,10 +73,9 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         return hasKey || hasPwd
     }
 
-    internal abstract fun createMavenRepository(
-        target: org.gradle.api.Project,
-        repositories: RepositoryHandler
-    ): MavenArtifactRepository
+    internal abstract fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository
+
+    internal abstract fun configureMavenRepository(target: Project, repository: MavenArtifactRepository)
 
     internal open fun validateMavenArtifacts(artifacts: MavenArtifactSet) = Unit
 

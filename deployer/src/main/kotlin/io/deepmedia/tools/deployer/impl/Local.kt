@@ -25,6 +25,10 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
         }
     }
 
+    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+        // Nothing to do
+    }
+
     override fun fallback(to: DeploySpec) {
         super.fallback(to)
         if (to is LocalDeploySpec) {
