@@ -97,6 +97,7 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                         component {
                             fromMavenPublication("pluginMaven", clone = true)
                             // These help with sonatype publications
+                            // TODO: add them in validateArtifacts so only for sonatype and only if missing
                             sources(project.tasks.makeEmptySourcesJar)
                             docs(project.tasks.makeEmptyJavadocJar)
                         }
@@ -107,6 +108,7 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                                 groupId.set { plugin.id }
                                 artifactId.set { plugin.id + ".gradle.plugin" }
                                 // These help with sonatype publications
+                                // TODO: add them in validateArtifacts so only for sonatype and only if missing
                                 sources(project.tasks.makeEmptySourcesJar)
                                 docs(project.tasks.makeEmptyJavadocJar)
                             }
