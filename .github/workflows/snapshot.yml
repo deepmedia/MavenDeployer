@@ -24,4 +24,4 @@ jobs:
           distribution: temurin
           cache: gradle
       - name: Publish sonatype snapshot
-        run: ./gradlew publishToSonatypeSnapshot
+        run: ./gradlew deploySonatypeSnapshot

@@ -1,321 +1,280 @@
-[![Build Status](https://github.com/deepmedia/MavenPublisher/workflows/Build/badge.svg?event=push)](https://github.com/deepmedia/MavenPublisher/actions)
-[![Release](https://img.shields.io/github/release/deepmedia/MavenPublisher.svg)](https://github.com/deepmedia/MavenPublisher/releases)
-[![Issues](https://img.shields.io/github/issues-raw/deepmedia/MavenPublisher.svg)](https://github.com/deepmedia/MavenPublisher/issues)
+[![Build Status](https://github.com/deepmedia/MavenDeployer/workflows/Build/badge.svg?event=push)](https://github.com/deepmedia/MavenDeployer/actions)
+[![Release](https://img.shields.io/github/release/deepmedia/MavenDeployer.svg)](https://github.com/deepmedia/MavenDeployer/releases)
+[![Issues](https://img.shields.io/github/issues-raw/deepmedia/MavenDeployer.svg)](https://github.com/deepmedia/MavenDeployer/issues)
 
-# MavenPublisher
+# MavenDeployer
 
-A lightweight, handy tool for publishing your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
-to different kinds of maven repositories. It supports publishing into:
+A lightweight, handy Gradle plugin to deploy your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
+to different kinds of repositories. It supports publishing to:
 - local directories, to use them as local maven repositories in other projects
 - Sonatype Nexus repositories, including [Sonatype OSSRH / Maven Central](https://central.sonatype.org/)
 - [GitHub Packages](https://docs.github.com/en/packages)
-- ~~Bintray's [JCenter](https://bintray.com), removed in v0.6.0~~
-
-To use any of the publisher plugins, you must configure the plugin repository in your build script:
 
 ```kotlin
-buildscript {
+// settings.gradle.kts
+pluginManagement {
     repositories {
-        mavenCentral() // or github packages
-        google()
+        gradlePluginPortal()
+        mavenCentral()
     }
-    dependencies {
-        classpath("io.deepmedia.tools:publisher:0.7.0")
-    }
+}
+
+// build.gradle.kts of deployable modules
+plugins {
+    id("io.deepmedia.tools.deployer") version "0.8.0"
 }
 ```
 
-The publisher plugin uses an older version of itself to publish itself into the Maven Central repository
-and in GitHub Packages. This means that you can check the plugin source code to see an example of how to use it.
+The plugin uses an older version of itself to publish itself to the Maven Central repository
+and to GitHub Packages. This means that you can check the plugin source code to see an example of how to use it.
 
 It also uses itself to publish snapshots to `https://s01.oss.sonatype.org/content/repositories/snapshots/`
 on each push to main. To use the snapshots, add the url as a maven repository and depend on
-`classpath("io.deepmedia.tools:publisher:latest-SNAPSHOT")`.
+`id("io.deepmedia.tools.deployer") version "latest-SNAPSHOT"`.
 
-For more examples, please take a look at [natario1/Egloo](https://github.com/natario1/Egloo), [natario1/Firestore](https://github.com/natario1/Firestore) or [natario1/Elements](https://github.com/natario1/Elements).
+# Usage
 
-## Usage
-
-To apply the plugin, declare it in your build script with the `io.deepmedia.tools.publisher` id:
-
-```groovy
-apply plugin: 'io.deepmedia.tools.publisher'
-```
-
-### Base Configuration
-
-All publishers are configured with the same common fields, although specific publisher
-implementations can have extra fields (for example, for authentication). The common configuration
-is specified at the root level of the `publisher` block:
+Plugin configuration happens through the `deployer` extension. You act on it by adding one or more `DeploySpec`s
+and configuring them. In addition, the `defaultSpec` can be used to configure default values that will be propagated 
+to all other specs.
 
 ```kotlin
-publisher {
-    // Project name. Defaults to rootProject.name
-    project.name = "MavenPublisher"
-    
-    // Project description. Can be null
-    project.description = "Handy tool to publish maven packages in different repositories."
-    
-    // Package artifact. Defaults to project's archivesBaseName
-    project.artifact = "publisher"
-    
-    // Package group id. Defaults to project's group
-    project.group = "io.deepmedia.tools"
-    
-    // Project url
-    project.url = "https://github.com/deepmedia/MavenPublisher"
-    
-    // Project SCM info. Defaults to simple Scm pointing to project.url
-    // Using platform specific functions ensure correct scm values
-    project.scm = Scm("https://github.com/deepmedia/MavenPublisher.git")
-    project.scm = GithubScm(user = "deepmedia", repository = "MavenPublisher")
-    project.scm = BitBucketScm(user = "deepmedia", repository = "MavenPublisher")
+deployer {
+    defaultSpec {
+        release.version.set("1.0.0")
+    }
 
-    // Project packaging. Automatically set to AAR for Android libraries
-    project.packaging = "aar"
-    
-    // Project licenses
-    project.addLicense(License.APACHE_2_0)
-    project.addLicense("My license", "https://mylicense.org")
-    
-    // Release version. Defaults to project's version
-    release.version = "0.1.4"
-    
-    // Release VCS tag. Defaults to "v${release.version}"
-    release.tag = "v0.1.4"
-    
-    // Release description. Defaults to "${project.name} {release.tag}"
-    release.description = "New release"
-    
-    // Release sources
-    release.setSources(Release.SOURCES_AUTO) // creates a sources Jar
-    release.setSources(sourcesJar.get())
-    
-    // Release docs
-    release.setDocs(Release.DOCS_AUTO) // create a docs Jar
-    release.setDocs(dokkaJar.get())
+    sonatypeSpec {
+        // release.version is 1.0.0
+        ...
+    }
 
-    // Signing keys
-    signing.key = "signing.key"
-    signing.password = "signing.password"
+    sonatypeSpec("snapshot") {
+        release.version.set("1.0.0-SNAPSHOT") // override default value
+        ...
+    }
 }
 ```
 
-Actual publishers can then be registered in this block by using their respective functions,
-for example:
+For each spec, the plugin will register a gradle task named `deploy<SpecType><SpecName>`. The spec type is either local,
+github, or sonatype. The name defaults to `""` but can be configured. In addition, an extra task called `deployAll` will be
+generated, running all deployments at once. In the example above, the following tasks are generated:
+
+- `deploySonatype`
+- `deploySonatypeSnapshot`
+- `deployAll`
+
+> **Note**: Use ./gradlew tasks --group='Deployment' to list all deploy tasks.
+
+# Deploy contents
+
+The contents of a deploy spec (e.g. AARs, JARs, additional artifacts like sources or javadocs) can be configured at `spec.content`.
+Each spec can support multiple components, each one corresponding to a maven publication and pom file.
+
+### Component inference
+
+By default, the plugin will try to infer the spec components based on the project structure and plugins. We currently
+support the following use cases:
+
+1. Kotlin Multiplatform projects: enabled when the Kotlin Multiplatform plugin is applied. 
+   The deploy spec will have one component per target, plus one component publishing the 'common' metadata.
+2. Android libraries: enabled when `com.android.library` plugin is applied.
+   The deploy spec will have a single component based on the release AAR.
+3. Gradle Plugins: enabled when `java-gradle-plugin` plugin is applied and `gradlePlugin.isAutomatedPublishing` is true.
+   The deploy spec will have one component for the project, and one gradle marker component for each plugin in `gradlePlugin.plugins`. 
+4. Java projects: enabled when the java base plugin is applied.
+   The deploy spec will have a single component from the `java` software component.
+
+### Custom components
+
+To declare custom components, simply add them to `spec.content`. Two types of custom components are supported:
+
+- Based on an existing Gradle [SoftwareComponent](https://docs.gradle.org/current/javadoc/org/gradle/api/component/SoftwareComponent.html)
+- Based on an existing Gradle [MavenPublication](https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html)
 
 ```kotlin
-publisher {
+deployer {
+    defaultSpec.content {
+        component {
+            fromSoftwareComponent("mySoftwareComponent")
+        }
+        component {
+            // cloning the publication makes sure that it can be shared across multiple specs.
+            fromMavenPublication("myMavenPublication", clone = true)
+        }
+    }
+}
+```
+
+# Spec configuration
+
+In addition to its contents, the `DeploySpec` interface offers a simple DSL to configure other common parameters of
+a publication. Under the hood, these will be applied to the publication's POM file.
+
+### Project info
+
+Use the `projectInfo` property or configuration block:
+
+```kotlin
+// Inside a spec...
+projectInfo {
+   // Project name. Defaults to rootProject.name
+   name.set("MavenDeployer")
+   // Project description. Defaults to rootProject.name
+   description.set("Handy tool to publish maven packages in different repositories.")
+   // Project url
+   url.set("https://github.com/deepmedia/MavenDeployer")
+   // Package group id. Defaults to project's group
+   groupId.set("io.deepmedia.tools")
+   // Package artifact. Defaults to project's archivesName or project.name
+   artifactId.set("deployer")
+   // Project SCM information. Defaults to project.url
+   scm {
+       // or: fromGithub("deepmedia", "MavenDeployer")
+       // or: fromBitbucket("deepmedia", "MavenDeployer")
+       // or: set url, connection and developerConnection directly
+   }
+   // Licenses. Apache 2.0 and MIT are built-in
+   license(apache2)
+   license(MIT)
+   license("MyLicense", "mylicense.com")
+   // Developers
+   developer("natario1", "mattia@deepmedia.io")
+}
+```
+
+### Release details
+
+Use the `release` property or configuration block:
+
+```kotlin
+// Inside a spec...
+release {
+   // Release version. Defaults to project.version, or AGP configured version for Android projects
+   release.version.set("1.0.0")
+   // Release VCS tag. Defaults to "v${release.version}"
+   release.tag.set("v0.1.4")
+   // Release description. Defaults to "${project.name} {release.tag}"
+   release.description.set("Brand new release")
+   // Release packaging. Automatically set to AAR for Android libraries
+   project.packaging = "jar"
+}
+```
+
+### Signing configuration
+
+Use the `signing` property or configuration block:
+
+```kotlin
+// Inside a spec...
+signing {
+   key.set(secret("SIGNING_KEY"))
+   password.set(secret("SIGNING_PASSWORD"))
+}
+```
+
+The signing key and password are considered **secrets**. This means that you will not pass the actual value to
+the deployer, but rather a lookup string. This lookup string can be:
+
+- The name of some environment variables that contains the resolved secret
+- The name of a Gradle property containing the resolved secret, resolved with `project.findProperty(lookup)`
+- The name of a property in the `local.properties` file, if present
+
+The resolved key and password are then passed to the `signing` plugin using [`useInMemoryPgpKeys`](https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys),
+to sign the publication artifacts.
+
+# Supported repositories
+
+Different types or repositories offer differ APIs to configure them, which is often mandatory. These options are 
+exposed through subclasses of the `DeploySpec` type, so that, for example, a `localSpec { }` block will expose
+`LocalDeploySpec` properties.
+
+### Local repositories
+
+Add a new spec with `localSpec {}`. The only configurable property is the directory into which to publish the artifacts:
+
+```kotlin
+deployer {
+    localSpec {
+        directory.set(file("my/dir/here"))
+    }
+
+    // If needed, you can add other named specs.
+    localSpec("other") { ... }
+}
+```
+
+If the directory is not set, this defaults to the `mavenLocal()` repository.
+
+### Sonatype / Nexus / Maven Central repositories
+
+Add a new spec with `sonatypeSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL 
+of the sonatype repo. This defaults to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/` -
+the Sonatype OSSRH which can be synced to Maven Central.
+
+Sonatype repositories make many fields mandatory:
+- authentication: use the `auth` block as shown below
+- signing
+- valid project url and scm
+- at least one developer and a license
+- possibly more
+
+Deployment will fail with clear errors notifying you about what's missing.
+
+```kotlin
+deployer {
     // Common configuration...
-    project.name = "Project name"
-    project.description = "Project description"
+    project.description.set("Handy tool to publish maven packages in different repositories.")
 
-    sonatype {
-        // Override some fields or add missing ones
-        project.name = "Project name for bintray"
-        release.version = "1.0.0-nightly"
-    }
-
-    directory {
-        // Override some fields or add missing ones
-        project.description = "Project description for local directory"
-        release.version = "1.0.0-rc1"
-    }
-}
-```
-
-### Specifying the publication contents
-
-You have two options to specify the publication contents. MavenPublisher will try to infer default
-values based on the currently applied plugin.
-
-- `publisher.component` : specifies the name of a `SoftwareComponent`. Defaults to "release" for Android projects and "java" for java projects, both of which create components for you.
-- `publisher.publication` : specifies the name of a `MavenPublication`. Defaults to null. When this is set, we'll use the publication's `SoftwareComponent` and modify the other publication fields to match the publisher configuration.
-
-Typically, you should specify either one or the other.
-
-### Secret values
-
-Sensitive values in the `auth` and `signing` configuration blocks are declared as secret.
-In this case, instead of passing the real value, you are supposed to pass a **key** to the real
-value.
-
-The publisher will use this key and look for the value as follows:
-
-- Look in environment variables
-- Search with `project.findProperty(key)`
-- Search in `local.properties` file, if present
-
-In other words, `signing.password` - for example - should not host your password in plain text, but rather a key
-to the actual password, like the name of an environment variable which holds the password.
-
-When the key value is absent, we assume it is equal to the field name (`"signing.password"`). This
-means that you can avoid configuring these values at all in Gradle, and just provide env variables
-or properties with the correct name (`"signing.password"`, `"signing.key"`, `"auth.user"`...).
-
-### Publication tasks
-
-The publisher plugin will add a task named `:publishTo` followed by the publication name.
-The publication name depends on the publisher being used (for example, sonatype) and the name
-that is passed to the configuration. For example:
-
-```kotlin
-publisher {
-    // Common configuration ...
-
-    sonatype {
+    sonatypeSpec {
         // Sonatype configuration...
-    }
-    sonatype("foo") {
-        // Sonatype configuration for foo...
-    }
-    sonatype("bar") {
-        // Sonatype configuration for bar...
-    }
-    directory {
-        // Local dir configuration...
-    }
-    directory("abc") {
-        // Local dir configuration...
-    }
-    github {
-        // Github configuration...
-    }
-}
-```
-
-In the example above, the following tasks will be available:
-
-- `:publishToSonatype`: publishes the default sonatype configuration
-- `:publishToSonatypeFoo`: publishes the `foo` sonatype configuration
-- `:publishToSonatypeBar`: publishes the `bar` sonatype configuration
-- `:publishToDirectory`: publishes the default directory configuration
-- `:publishToDirectoryAbc`: publishes the `abc` sonatype configuration
-- `:publishToGithub`: publishes the default github configuration
-- `:publishAllSonatype`: publishes all "sonatype" publications
-- `:publishAllDirectory`: publishes all "directory" publications
-- `:publishAllGithub`: publishes all "github" publications
-- `:publishAll`: publishes everything
-
-## Local repository publisher
-
-In addition to the common configuration fields, the local publisher will ask you for a path to the
-local directory where the final package should be published. It can be set as follows:
-
-```kotlin
-publisher {
-    // Common configuration...
-    directory {
-        // Directory configuration...
-        directory = "build/output"
-    }
-
-    // If needed, you can add other named publications.
-    directory("other") { ... }
-}
-```
-
-As described earlier, all the configuration fields that are set in the `bintray` block will override
-the root level values. Note also that all `signing` fields are [Secret values](#secret-values)!
-
-If the directory is not set, the local publisher will publish into the "maven local" repository,
-typically `$USER_HOME/.m2/repository` (see [docs](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.dsl.RepositoryHandler.html#org.gradle.api.artifacts.dsl.RepositoryHandler:mavenLocal())).
-
-## Sonatype / Nexus / Maven Central publisher
-
-By default, the sonatype publisher will publish packages at `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`,
-in the Sonatype OSSRH which can be synced to Maven Central. In this case, in addition to the common
-configuration fields, you will need to pass your username and password that were used to register
-the package group in OSSRH in order to authenticate.
-
-Note that publishing to OSSRH also makes many fields (like a license and at least a developer) mandatory.
-MavenPublisher will fail with clear errors notifying you about what's missing.
-
-```kotlin
-publisher {
-    // Common configuration...
-    project.description = "Handy tool to publish maven packages in different repositories."
-
-    sonatype {
-        // Sonatype configuration...
-        // You can find repository constants in io.deepmedia.tools.publisher.sonatype.Sonatype.
-        // To publish a snapshot, just use one of the Sonatype.OSSRH_SNAPSHOT_* urls.
-        repository = Sonatype.OSSRH_1
-
-        auth.user = "SONATYPE_USER" // defaults to "auth.user"
-        auth.password = "SONATYPE_PASSWORD" // defaults to "auth.password"
+        repositoryUrl.set(ossrh1)
+     
+        // Credentials used to register the package group into the OSSRH repository...
+        auth.user.set(secret("SONATYPE_USER")) 
+        auth.password.set(secret("SONATYPE_PASSWORD"))
 
         // Signing is required
-        signing.key = "SIGNING_KEY" // defaults to "signing.key"
-        signing.password = "SIGNING_PASSWORD" // defaults to "signing.password"
+        signing.key.set(secret("SIGNING_KEY"))
+        signing.password.set(secret("SIGNING_PASSWORD"))
     }
 
-    // If needed, you can add other named publications.
-    sonatype("snapshot") {
-        repository = Sonatype.OSSRH_SNAPSHOT_1
+    // If needed, you can add other named specs.
+    sonatypeSpec("snapshot") { 
+        repositoryUrl.set(ossrhSnapshots1)
+        release.version.set("latest-SNAPSHOT")
         ...
     }
 }
 ```
 
-As described earlier, all the configuration fields that are set in the `sonatype` block will override
-the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
+### Github Packages repositories
 
-## Github Packages publisher
+Add a new spec with `githubSpec {}`. It adds two mandatory properties, `owner` and `repository`, which 
+are used to identify the GitHub repository.
 
-In addition to the common configuration fields, the github publisher requires repository name (like `MavenPublisher`), 
-repository owner name (like `deepmedia`) and authentication information. To authenticate, a 
-[personal access token](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries) 
-is required, along with the GitHub username associated with it.
+In addition to this, it is also mandatory to authenticate to GitHub using your username and a
+[personal access token](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries).
+These can be added as secrets to the `auth` block, as shown below.
 
 ```kotlin
-publisher {
+deployer {
     // Common configuration...
-    project.description = "Handy tool to publish maven packages in different repositories."
+    project.description.set("Handy tool to publish maven packages in different repositories.")
 
-    github {
-        // Identify the GitHub repository: deepmedia/MavenPublisher
-        owner = "deepmedia"
-        repository = "MavenPublisher"
-
-        auth.user = "GITHUB_USER" // defaults to "auth.user"
-        auth.token = "GITHUB_PERSONAL_ACCESS_TOKEN" // defaults to "auth.token"
+    githubSpec {
+        // Identify the GitHub repository: deepmedia/MavenDeployer
+        owner.set("deepmedia")
+        repository.set("MavenDeployer")
+       
+        // Personal GitHub username and a personal access token linked to it
+        auth.user.set(secret("GITHUB_USER"))
+        auth.token.set(secret("GITHUB_TOKEN"))
     }
 
-    // If needed, you can add other named publications.
-    github("private") {
+    // If needed, you can add other named specs.
+    githubSpec("private") {
         ...
     }
 }
 ```
-
-As described earlier, all the configuration fields that are set in the `sonatype` block will override
-the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
-
-## Bintray publisher
-
-> As of version 0.6.0, the Bintray publisher has been removed.
-
-In addition to the common configuration fields, to authenticate to Bintray, you will need to pass
-a user name, a user key and the Bintray repo name as follows:
-
-```kotlin
-publisher {
-    // Common configuration...
-    project.description = "Handy tool to publish maven packages in different repositories."
-
-    bintray {
-        // Bintray configuration...
-        auth.user = "BINTRAY_USER" // defaults to "auth.user"
-        auth.key = "BINTRAY_KEY" // defaults to "auth.key"
-        auth.repo = "BINTRAY_REPO" // defaults to "auth.repo"
-        dryRun = false // true for a dry-run publication for testing
-    }
-
-    // If needed, you can add other named publications.
-    bintray("other") { ... }
-}
-```
-
-As described earlier, all the configuration fields that are set in the `bintray` block will override
-the root level values. Note also that all `auth` and `signing` fields are [Secret values](#secret-values)!
