@@ -20,10 +20,10 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
     val owner: Property<String> = objects.property<String>().convention(auth.user)
     val repository: Property<String> = objects.property()
 
-    override fun RepositoryHandler.mavenRepository(target: Project): MavenArtifactRepository {
+    override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val owner = owner.get()
         val repo = repository.orNull ?: target.rootProject.name
-        return maven {
+        return repositories.maven {
             this.name = "$owner/$repo".hashCode().toString()
             this.url = target.uri("https://maven.pkg.github.com/$owner/$repo")
             credentials.username = target.getSecretOrThrow(auth.user.get(), "spec.auth.user")

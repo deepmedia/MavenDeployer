@@ -7,9 +7,12 @@ import io.deepmedia.tools.deployer.model.*
 import org.gradle.api.Action
 import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.kotlin.dsl.polymorphicDomainObjectContainer
+import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 
 open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) {
+
+    val verbose = target.objects.property<Boolean>().convention(false)
 
     private val objects = target.objects
 
@@ -25,22 +28,19 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
         registerFactory(SonatypeDeploySpec::class.java) { SonatypeDeploySpec(objects, it).apply { fallback(defaultSpec) } }
     }
 
-    private fun fullname(current: String, default: String): String {
+    private fun specName(current: String, default: String): String {
         return if (current.startsWith(default)) current else "$default${current.capitalize()}"
     }
 
     fun localSpec(name: String = "local", configure: Action<LocalDeploySpec> = Action {  }) {
-        val fullname = fullname(name, "local")
-        specs.register(fullname, LocalDeploySpec::class.java, configure)
+        specs.register(specName(name, "local"), LocalDeploySpec::class.java, configure)
     }
 
     fun sonatypeSpec(name: String = "sonatype", configure: Action<SonatypeDeploySpec> = Action {  }) {
-        val fullname = fullname(name, "sonatype")
-        specs.register(fullname, SonatypeDeploySpec::class.java, configure)
+        specs.register(specName(name, "sonatype"), SonatypeDeploySpec::class.java, configure)
     }
 
     fun githubSpec(name: String = "github", configure: Action<GithubDeploySpec> = Action {  }) {
-        val fullname = fullname(name, "github")
-        specs.register(fullname, GithubDeploySpec::class.java, configure)
+        specs.register(specName(name, "github"), GithubDeploySpec::class.java, configure)
     }
 }

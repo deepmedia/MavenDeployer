@@ -5,6 +5,8 @@ import org.gradle.api.Named
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.publish.maven.MavenArtifactSet
+import org.gradle.api.publish.maven.MavenPom
 import org.gradle.kotlin.dsl.newInstance
 import kotlin.reflect.KClass
 
@@ -64,5 +66,16 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.resolve(target, this)
     }
 
-    internal abstract fun RepositoryHandler.mavenRepository(target: org.gradle.api.Project): MavenArtifactRepository
+    internal open fun hasSigning(): Boolean {
+        return signing.key.isPresent || signing.password.isPresent
+    }
+
+    internal abstract fun createMavenRepository(
+        target: org.gradle.api.Project,
+        repositories: RepositoryHandler
+    ): MavenArtifactRepository
+
+    internal open fun validateMavenArtifacts(artifacts: MavenArtifactSet) = Unit
+
+    internal open fun validateMavenPom(pom: MavenPom) = Unit
 }

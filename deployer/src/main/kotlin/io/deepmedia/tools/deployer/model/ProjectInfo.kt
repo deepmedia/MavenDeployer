@@ -54,9 +54,9 @@ open class ProjectInfo @Inject constructor(private val objects: ObjectFactory) :
         groupId.fallback(to.groupId)
         artifactId.fallback(to.artifactId)
         scm.fallback(to.scm)
-        to.licenses.whenObjectAdded { licenses.add(this) }
+        to.licenses.all { licenses.add(this) }
         to.licenses.whenObjectRemoved { licenses.remove(this) }
-        to.developers.whenObjectAdded { developers.add(this) }
+        to.developers.all { developers.add(this) }
         to.developers.whenObjectRemoved { developers.remove(this) }
     }
 

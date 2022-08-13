@@ -20,14 +20,14 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
         url.set("https://github.com/$user/$repository")
         connection.set("scm:git:git://github.com/$user/$repository.git")
         developerConnection.set("scm:git:ssh://github.com:$user/$repository.git")
-        sourceUrl { tag -> "${resolvedUrl.get()}/tree/$tag" }
+        sourceUrl { tag -> "https://github.com/$user/$repository/tree/$tag" }
     }
 
     fun fromBitbucket(user: String, repository: String) {
         url.set("https://bitbucket.org/$user/$repository")
         connection.set("scm:git:git://bitbucket.org/$user/$repository.git")
         developerConnection.set("scm:git:ssh://bitbucket.org:$user/$repository.git")
-        sourceUrl { tag -> "${resolvedUrl.get()}/src/" }
+        sourceUrl { tag -> "https://bitbucket.org/$user/$repository/src/" }
     }
 
     internal fun fallback(to: Scm) {
@@ -38,11 +38,12 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
 
     internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
         resolvedUrl = url.orElse(spec.projectInfo.url)
+        sourceUrl.convention(resolvedUrl.map { resolvedUrl ->
+            Transformer<String, String> { resolvedUrl }
+        })
     }
 
-    internal val sourceUrl: Property<Transformer<String, String>> = objects
-        .property<Transformer<String, String>>()
-        .convention { tag -> resolvedUrl.get() }
+    internal val sourceUrl: Property<Transformer<String, String>> = objects.property()
 
     fun sourceUrl(block: (String) -> String) {
         sourceUrl.set(block)

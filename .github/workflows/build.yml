@@ -21,4 +21,4 @@ jobs:
           distribution: temurin
           cache: gradle
       - name: Perform base checks
-        run: ./gradlew build publishToDirectory
+        run: ./gradlew build deployLocal

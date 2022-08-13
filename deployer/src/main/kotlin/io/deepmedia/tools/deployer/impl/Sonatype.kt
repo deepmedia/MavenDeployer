@@ -2,6 +2,8 @@ package io.deepmedia.tools.deployer.impl
 
 import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.getSecretOrThrow
+import io.deepmedia.tools.deployer.isJavadocJar
+import io.deepmedia.tools.deployer.isSourcesJar
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
@@ -10,8 +12,12 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.publish.maven.MavenArtifactSet
+import org.gradle.api.publish.maven.MavenPom
+import org.gradle.api.publish.maven.internal.publication.MavenPomInternal
 import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.property
+import org.jetbrains.kotlin.gradle.utils.`is`
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -25,12 +31,47 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 
     val repositoryUrl: Property<String> = objects.property<String>().convention(ossrh1)
 
-    override fun RepositoryHandler.mavenRepository(target: Project): MavenArtifactRepository {
+    override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val repo = repositoryUrl.get()
-        return maven(repo) {
+        return repositories.maven(repo) {
             this.name = abs(repo.hashCode()).toString()
             credentials.username = target.getSecretOrThrow(auth.user.get(), "spec.auth.user")
             credentials.password = target.getSecretOrThrow(auth.password.get(), "spec.auth.password")
+        }
+    }
+
+    override fun hasSigning(): Boolean {
+        require(super.hasSigning()) {
+            "Signing is mandatory for Sonatype deployments. Please add spec.signing.key and spec.signing.password."
+        }
+        return true
+    }
+
+    override fun validateMavenArtifacts(artifacts: MavenArtifactSet) {
+        super.validateMavenArtifacts(artifacts)
+        require(artifacts.any { it.isSourcesJar }) {
+            "Sonatype requires a sources jar artifact. Please add it to your component."
+        }
+        require(artifacts.any { it.isJavadocJar }) {
+            "Sonatype requires a javadoc jar artifact. Please add it to your component."
+        }
+    }
+
+    // https://central.sonatype.org/pages/requirements.html
+    override fun validateMavenPom(pom: MavenPom) {
+        super.validateMavenPom(pom)
+        require(pom.url.isPresent) {
+            "Sonatype POM requires a project url. Please add it to spec.projectInfo.url."
+        }
+        pom as MavenPomInternal
+        require(pom.licenses.isNotEmpty()) {
+            "Sonatype POM requires at least one license. Please add it to spec.projectInfo.licenses."
+        }
+        require(pom.developers.isNotEmpty()) {
+            "Sonatype POM requires at least one developer. Please add it to spec.projectInfo.developers."
+        }
+        require(pom.scm.connection.isPresent && pom.scm.developerConnection.isPresent && pom.scm.url.isPresent) {
+            "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm."
         }
     }
 

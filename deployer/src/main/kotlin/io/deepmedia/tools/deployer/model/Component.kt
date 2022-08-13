@@ -1,23 +1,12 @@
 package io.deepmedia.tools.deployer.model
 
-import com.android.build.gradle.BaseExtension
-import io.deepmedia.tools.deployer.*
-import io.deepmedia.tools.deployer.isAndroidLibraryProject
-import io.deepmedia.tools.deployer.isJavaProject
-import io.deepmedia.tools.deployer.isKotlinProject
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.Transformer
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.bundling.Jar
-import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.get
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.api.publish.PublishingExtension
 import org.gradle.kotlin.dsl.property
-import org.jetbrains.dokka.gradle.DokkaPlugin
-import org.jetbrains.dokka.gradle.DokkaTask
 import javax.inject.Inject
 
 open class Component @Inject constructor(objects: ObjectFactory) {
@@ -25,27 +14,36 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     internal sealed class Origin {
         class MavenPublication(val name: String, val clone: Boolean = false) : Origin()
         class SoftwareComponent(val name: String) : Origin()
-        fun publicationName(spec: DeploySpec): String = when (this) {
-            is SoftwareComponent -> name + "SoftwareFor" + spec.name.capitalize()
-            is MavenPublication -> name + "MavenFor" + spec.name.capitalize()
-        }
 
-        /* fun generateTaskName(what: String): String {
-            val name = when (this) {
-                is SoftwareComponent -> name
-                is MavenPublication -> name
-            }
-            return "generate${name.capitalize()}${what.capitalize()}ForDeployment"
-        } */
+        fun publicationName(spec: DeploySpec): String = when {
+            this is SoftwareComponent -> name + "SoftwareFor" + spec.name.capitalize()
+            this is MavenPublication && clone -> name + "ClonedFor" + spec.name.capitalize()
+            else -> (this as MavenPublication).name
+        }
     }
 
     internal val origin: Property<Origin> = objects.property()
 
+    var inferred: Boolean = false
+        internal set
+
     fun fromMavenPublication(name: String, clone: Boolean = false) {
         origin.set(Origin.MavenPublication(name, clone))
+        configureWhen { block ->
+            val publishing = extensions.getByType(PublishingExtension::class.java)
+            publishing.publications.configureEach {
+                if (this.name == name) block()
+            }
+        }
     }
+
     fun fromSoftwareComponent(name: String) {
         origin.set(Origin.SoftwareComponent(name))
+        configureWhen { block ->
+            components.configureEach {
+                if (this.name == name) block()
+            }
+        }
     }
 
     internal val sources: Property<Any> = objects.property()
@@ -56,51 +54,17 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     val groupId = objects.property<Transformer<String, String>>()
     val artifactId = objects.property<Transformer<String, String>>()
 
-    /*
-    internal lateinit var resolvedSources: Provider<Any>
-    internal lateinit var resolvedDocs: Provider<Any>
-    val autoSources = objects.property<Boolean>().convention(false)
-    val autoDocs = objects.property<Boolean>().convention(false)
-    fun autoSources(auto: Boolean = true) { autoSources.set(auto) }
-    fun autoDocs(auto: Boolean = true) { autoDocs.set(auto) } */
+    internal fun whenConfigurable(project: Project, block: () -> Unit) {
+        require(::configureWhenBlock.isInitialized) {
+            "Components must be initialized with fromMavenPublication() or fromSoftwareComponent()."
+        }
+        project.configureWhenBlock(block)
+    }
 
-    /* internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
-        resolvedDocs = docs.orElse(target.provider {
-            if (!autoDocs.get()) return@provider null
-            if (!target.isKotlinProject) return@provider null
-            val taskName = resolvedOrigin.get().generateTaskName("docs")
-            runCatching { target.tasks.named(taskName) }.getOrElse {
-                target.apply<DokkaPlugin>()
-                target.tasks.register(taskName, Jar::class.java) {
-                    val dokkaTask = when {
-                        target.isKotlinMultiplatformProject -> "dokkaHtml"
-                        else -> "dokkaJavadoc"
-                    }.let { target.tasks[it] as DokkaTask }
-                    dependsOn(dokkaTask)
-                    archiveClassifier.set("javadoc")
-                    from(dokkaTask.outputDirectory)
-                }
-            }
-        })
-        resolvedSources = sources.orElse(target.provider {
-            if (!autoSources.get()) return@provider null
-            if (!target.isJavaProject) return@provider null
-            val taskName = resolvedOrigin.get().generateTaskName("sources")
-            runCatching { target.tasks.named(taskName) }.getOrElse {
-                target.tasks.register(taskName, Jar::class.java) {
-                    archiveClassifier.set("sources")
-                    if (target.isAndroidLibraryProject) {
-                        val android = project.extensions["android"] as BaseExtension
-                        from(android.sourceSets["main"].java.srcDirs)
-                    } else {
-                        val java: JavaPluginExtension = project.extensions.getByType()
-                        val sourceSet = java.sourceSets["main"]
-                        from(sourceSet.allSource)
-                    }
-                }
-            }
-        })
-    } */
+    private lateinit var configureWhenBlock: Project.(configurationBlock: () -> Unit) -> Unit
+    internal fun configureWhen(block: Project.(configurationBlock: () -> Unit) -> Unit) {
+        configureWhenBlock = block
+    }
 }
 
 interface ComponentScope {

@@ -1,25 +1,20 @@
+@file:Suppress("ObjectPropertyName")
+
 package io.deepmedia.tools.deployer
 
 import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.Project
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.newInstance
+import org.gradle.api.publish.maven.MavenArtifact
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import java.io.FileInputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
-// internal fun String.capitalize() = capitalize()
-
-internal fun missingField(field: String): Nothing {
-    error("Could not determine '$field'. Please specify it explicitly.")
-}
 
 internal fun <T> Property<T>.fallback(value: T) {
     convention(value)
@@ -30,6 +25,7 @@ internal fun <T> Property<T>.fallback(value: Provider<T>) {
 }
 
 private var _hasKotlinPluginClasspath: Boolean? = null
+
 private var _hasAndroidPluginClasspath: Boolean? = null
 
 internal val Project.hasKotlinPluginClasspath: Boolean get() {
@@ -51,12 +47,24 @@ internal val Project.hasAndroidPluginClasspath: Boolean get() {
 }
 
 internal val Project.isJavaProject get() = plugins.any { it is JavaBasePlugin }
+
 internal val Project.isGradlePluginProject get() = plugins.any { it is JavaGradlePluginPlugin }
+
 internal val Project.isAndroidLibraryProject get() = hasAndroidPluginClasspath && plugins.any { it is LibraryPlugin }
+
 internal val Project.isKotlinProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinBasePluginWrapper }
+
 internal val Project.isKotlinMultiplatformProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
 
 private val localPropertiesCache = ConcurrentHashMap<Project, Properties>()
+
+internal val MavenArtifact.isSourcesJar get() = classifier == "sources" && extension == "jar"
+
+internal val MavenArtifact.isJavadocJar get() = classifier == "javadoc" && extension == "jar"
+
+/* internal fun missingField(field: String): Nothing {
+    error("Could not determine '$field'. Please specify it explicitly.")
+} */
 
 internal fun Project.getSecretOrThrow(key: String, field: String): String {
     return getSecretOrNull(key) ?: error("Secret key $field not found in environment variables nor properties.")

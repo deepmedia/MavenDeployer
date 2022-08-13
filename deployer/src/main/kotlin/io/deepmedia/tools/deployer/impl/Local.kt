@@ -16,12 +16,12 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<Auth>(objects, name, Auth::class) {
     val directory: DirectoryProperty = objects.directoryProperty()
 
-    override fun RepositoryHandler.mavenRepository(target: Project): MavenArtifactRepository {
+    override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         return if (directory.isPresent) {
             val repo = abs(directory.get().asFile.absolutePath.hashCode()).toString()
-            maven(directory) { this.name = repo }
+            repositories.maven(directory) { this.name = repo }
         } else {
-            mavenLocal()
+            repositories.mavenLocal()
         }
     }
 
