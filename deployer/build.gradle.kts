@@ -31,8 +31,8 @@ deployer {
     defaultSpec {
         projectInfo {
             description.set("A lightweight, handy tool for publishing maven / Gradle packages to different kinds of repositories.")
-            url.set("https://github.com/deepmedia/MavenPublisher")
-            scm.fromGithub("deepmedia", "MavenPublisher")
+            url.set("https://github.com/deepmedia/MavenDeployer")
+            scm.fromGithub("deepmedia", "MavenDeployer")
             license(apache2)
             developer("natario1", "mattia@deepmedia.io", "DeepMedia", "https://deepmedia.io")
         }
@@ -64,7 +64,7 @@ deployer {
 
     // use "deployGithub" to deploy to github packages
     githubSpec {
-        repository.set("MavenPublisher")
+        repository.set("MavenDeployer")
         owner.set("deepmedia")
         auth.user.set("GHUB_USER")
         auth.token.set("GHUB_PERSONAL_ACCESS_TOKEN")
@@ -73,6 +73,5 @@ deployer {
 
 /* val deployLegacy by tasks.registering {
     dependsOn("publishPluginMavenPublicationToMavenLocal")
-    dependsOn("publishPublisherPluginMarkerMavenPublicationToMavenLocal")
     dependsOn("publishDeployerPluginMarkerMavenPublicationToMavenLocal")
 } */

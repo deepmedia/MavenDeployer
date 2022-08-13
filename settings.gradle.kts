@@ -15,7 +15,7 @@ pluginManagement {
         val token: String? = "GHUB_PERSONAL_ACCESS_TOKEN".let { props.getProperty(it) ?: System.getenv(it) }
         if (!user.isNullOrEmpty() && !token.isNullOrEmpty()) {
             maven {
-                url = uri("https://maven.pkg.github.com/deepmedia/MavenPublisher")
+                url = uri("https://maven.pkg.github.com/deepmedia/MavenDeployer")
                 credentials.username = user
                 credentials.password = token
             }
