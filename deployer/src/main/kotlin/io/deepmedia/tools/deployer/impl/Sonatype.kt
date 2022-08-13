@@ -1,5 +1,6 @@
 package io.deepmedia.tools.deployer.impl
 
+import io.deepmedia.tools.deployer.dump
 import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.isJavadocJar
 import io.deepmedia.tools.deployer.isSourcesJar
@@ -52,12 +53,12 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 
     override fun validateMavenArtifacts(artifacts: MavenArtifactSet) {
         super.validateMavenArtifacts(artifacts)
-        require(artifacts.any { it.isSourcesJar }) {
-            "Sonatype requires a sources jar artifact. Please add it to your component."
+        fun err(type: String): String {
+            return "Sonatype requires a $type jar artifact. Please add it to your component. " +
+                    "Available artifacts: " + artifacts.dump()
         }
-        require(artifacts.any { it.isJavadocJar }) {
-            "Sonatype requires a javadoc jar artifact. Please add it to your component."
-        }
+        require(artifacts.any { it.isSourcesJar }) { err("sources") }
+        require(artifacts.any { it.isJavadocJar }) { err("javadoc") }
     }
 
     // https://central.sonatype.org/pages/requirements.html

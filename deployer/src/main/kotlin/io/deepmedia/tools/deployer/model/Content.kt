@@ -6,6 +6,8 @@ import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -94,6 +96,9 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                     if (gradlePlugin.isAutomatedPublishing) {
                         component {
                             fromMavenPublication("pluginMaven", clone = true)
+                            // These help with sonatype publications
+                            sources(project.tasks.makeEmptySourcesJar)
+                            docs(project.tasks.makeEmptyJavadocJar)
                         }
                         gradlePlugin.plugins.all {
                             val plugin = this
@@ -101,6 +106,9 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                                 fromMavenPublication("${plugin.name}PluginMarkerMaven", clone = true)
                                 groupId.set { plugin.id }
                                 artifactId.set { plugin.id + ".gradle.plugin" }
+                                // These help with sonatype publications
+                                sources(project.tasks.makeEmptySourcesJar)
+                                docs(project.tasks.makeEmptyJavadocJar)
                             }
                         }
                     }

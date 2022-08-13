@@ -4,10 +4,18 @@ package io.deepmedia.tools.deployer
 
 import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenArtifact
+import org.gradle.api.publish.maven.MavenArtifactSet
+import org.gradle.api.tasks.TaskContainer
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Jar
+import org.gradle.kotlin.dsl.named
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.registering
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
@@ -59,3 +67,24 @@ internal val Project.isKotlinMultiplatformProject get() = hasKotlinPluginClasspa
 internal val MavenArtifact.isSourcesJar get() = classifier == "sources" && extension == "jar"
 
 internal val MavenArtifact.isJavadocJar get() = classifier == "javadoc" && extension == "jar"
+
+internal fun MavenArtifactSet.dump(): String {
+    return if (isEmpty()) "[]"
+    else joinToString("\n\t", prefix = "\n\t") {
+        "${it.file.name} - ${it.extension} - ${it.classifier}"
+    }
+}
+
+internal inline fun <reified T: Task> TaskContainer.maybeRegister(name: String, crossinline configure: T.() -> Unit): TaskProvider<T> {
+    return runCatching { named<T>(name) }.getOrElse {
+        register<T>(name) { configure() }
+    }
+}
+
+internal val TaskContainer.makeEmptySourcesJar get() = maybeRegister<Jar>("makeEmptySourcesJar") {
+    archiveClassifier.set("sources")
+}
+
+internal val TaskContainer.makeEmptyJavadocJar get() = maybeRegister<Jar>("makeEmptyJavadocJar") {
+    archiveClassifier.set("javadoc")
+}

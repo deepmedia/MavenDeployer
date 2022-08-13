@@ -3,7 +3,7 @@ import io.deepmedia.tools.deployer.impl.SonatypeAuth
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.8.0-rc07"
+    id("io.deepmedia.tools.deployer") version "0.8.0-rc12"
 }
 
 dependencies {
@@ -28,6 +28,8 @@ group = "io.deepmedia.tools.deployer"
 version = "0.8.0"
 
 deployer {
+    verbose.set(true)
+
     defaultSpec {
         projectInfo {
             description.set("A lightweight, handy tool for publishing maven / Gradle packages to different kinds of repositories.")

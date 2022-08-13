@@ -53,11 +53,12 @@ internal fun Project.configureArtifacts(
             // in publications setup by java-gradle-plugin, see MavenPluginPublishPlugin.java.
             maven.pom.withXml(originalPublication.pom.xmlAction)
             // Care about artifacts and dependencies.
+            log { "configureArtifacts(${spec.name}/${origin.name}): trying to clone original publication artifacts: ${originalPublication.artifacts.dump()}" }
             originalPublication.artifacts.configureEach {
                 val contained = maven.artifacts.any { a ->
                     a.classifier == classifier && a.extension == extension
                 }
-                log { "configureArtifacts(${spec.name}/${origin.name}): processing artifact $classifier/$extension, contained=$contained" }
+                log { "configureArtifacts(${spec.name}/${origin.name}): processing artifact ${file.name} - $extension - $classifier, contained=$contained" }
                 if (!contained) maven
                     .artifact(this)
                     .builtBy(this.buildDependencies)
@@ -80,6 +81,8 @@ internal fun Project.configureArtifacts(
             maven.artifact(it).builtBy(it)
         }
     }
+
+    log { "configureArtifacts(${spec.name}): final artifacts: ${maven.artifacts.dump()}" }
 }
 
 internal fun Project.configureSigning(
@@ -88,7 +91,7 @@ internal fun Project.configureSigning(
 ) {
     // Configure signing if present
     if (spec.hasSigning(this)) {
-        log { "${spec.name}: signing MavenPublication ${maven.name}" }
+        log { "configureSigning(${spec.name}): signing MavenPublication ${maven.name}" }
         val ext = extensions.getByType(SigningExtension::class)
         val key = spec.signing.key.get().resolve(this, "spec.signing.key")
         val password = spec.signing.password.get().resolve(this, "spec.signing.password")
@@ -109,7 +112,7 @@ internal fun Project.configurePom(
     component: Component,
     maven: MavenPublication
 ) {
-    log { "${spec.name}: configuring MavenPublication ${maven.name}" }
+    log { "configurePom(${spec.name}): configuring MavenPublication ${maven.name}" }
     maven.groupId = spec.projectInfo.resolvedGroupId.get().let { base ->
         component.groupId.orNull?.transform(base) ?: base
     }
