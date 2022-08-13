@@ -3,7 +3,7 @@ import io.deepmedia.tools.deployer.impl.SonatypeAuth
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.8.0-rc04"
+    id("io.deepmedia.tools.deployer") version "0.8.0-rc05"
 }
 
 dependencies {
@@ -25,7 +25,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.8.0-rc05"
+version = "0.8.0"
 
 deployer {
     defaultSpec {
