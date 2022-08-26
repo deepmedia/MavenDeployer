@@ -82,6 +82,15 @@ internal fun Project.configureArtifacts(
         }
     }
 
+    component.extras.configureEach {
+        log { "${spec.name}: adding extra $this to MavenPublication ${maven.name}" }
+        try {
+            maven.artifact(this).builtBy(this)
+        } catch (e: Throwable) {
+            throw IllegalArgumentException("Could not add extra $this to publication ${maven.name} of DeploySpec $spec", e)
+        }
+    }
+
     log { "configureArtifacts(${spec.name}): final artifacts: ${maven.artifacts.dump()}" }
 }
 

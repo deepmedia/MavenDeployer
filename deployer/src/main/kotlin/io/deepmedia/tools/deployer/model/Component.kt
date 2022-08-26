@@ -12,6 +12,7 @@ import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.domainObjectSet
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.property
 import org.gradle.plugin.devel.PluginDeclaration
@@ -101,6 +102,8 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     internal val docs: Property<Any> = objects.property()
     fun sources(task: Any?) { sources.set(task) }
     fun docs(task: Any?) { docs.set(task) }
+
+    val extras = objects.domainObjectSet(Any::class)
 
     val groupId = objects.property<Transformer<String, String>>()
     val artifactId = objects.property<Transformer<String, String>>()
