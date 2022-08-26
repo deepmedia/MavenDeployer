@@ -8,7 +8,11 @@ import org.gradle.api.Project
 import org.gradle.api.Transformer
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.property
 import org.gradle.plugin.devel.PluginDeclaration
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -18,25 +22,25 @@ import javax.inject.Inject
 open class Component @Inject constructor(objects: ObjectFactory) {
 
     internal sealed class Origin(val tag: Any?) {
-        class MavenPublication(
-            val name: String,
-            val clone: Boolean = false,
-            tag: Any? = null
-        ) : Origin(tag)
-
-        class SoftwareComponent(
-            val name: String,
-            tag: Any? = null
-        ) : Origin(tag)
-
-        internal fun publicationName(spec: DeploySpec): String = when {
-            this is SoftwareComponent -> name + "SoftwareFor" + spec.name.capitalize()
-            this is MavenPublication && clone -> name + "ClonedFor" + spec.name.capitalize()
-            else -> (this as MavenPublication).name
-        }
+        class MavenPublication(val name: String, val clone: Boolean = false, tag: Any? = null) : Origin(tag)
+        class SoftwareComponent(val name: String, tag: Any? = null) : Origin(tag)
     }
 
     internal val origin: Property<Origin> = objects.property()
+
+    internal fun maybeCreatePublication(publications: PublicationContainer, spec: DeploySpec): MavenPublication {
+        val origin = origin.get()
+        val name = when {
+            origin is Origin.SoftwareComponent -> origin.name + "SoftwareFor" + spec.name.capitalize()
+            origin is Origin.MavenPublication && origin.clone -> origin.name + "ClonedFor" + spec.name.capitalize()
+            else -> (origin as Origin.MavenPublication).name
+        }
+        return when {
+            origin is Origin.SoftwareComponent -> publications.create(name, MavenPublication::class)
+            origin is Origin.MavenPublication && origin.clone -> publications.create(name, MavenPublication::class)
+            else -> publications[name] as MavenPublication
+        }
+    }
 
     val tag: Any? get() = origin.orNull?.tag
 
@@ -100,6 +104,8 @@ open class Component @Inject constructor(objects: ObjectFactory) {
 
     val groupId = objects.property<Transformer<String, String>>()
     val artifactId = objects.property<Transformer<String, String>>()
+
+    val enabled: Property<Boolean> = objects.property<Boolean>().convention(true)
 
     internal fun whenConfigurable(project: Project, block: () -> Unit) {
         require(::configureWhenBlock.isInitialized) {

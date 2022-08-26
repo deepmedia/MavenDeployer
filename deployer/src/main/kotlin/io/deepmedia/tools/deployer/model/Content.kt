@@ -84,6 +84,8 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                     }
                 }
                 project.isAndroidLibraryProject -> {
+                    // TODO: from 7.1.0, user has many options. we should read from AGP extension.
+                    // https://android.googlesource.com/platform/tools/base/+/refs/heads/mirror-goog-studio-main/build-system/gradle-api/src/main/java/com/android/build/api/dsl/LibraryPublishing.kt
                     component { fromSoftwareComponent("release") }
                 }
                 project.isJavaProject -> {

@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:7.0.4")
+    compileOnly("com.android.tools.build:gradle:7.2.2")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
     api("org.jetbrains.dokka:dokka-gradle-plugin:1.6.20")
 }

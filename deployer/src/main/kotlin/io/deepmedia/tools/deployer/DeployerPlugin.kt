@@ -60,20 +60,9 @@ class DeployerPlugin : Plugin<Project> {
                 log { "${spec.name}: processing ${components.size} components" }
                 spec.content.components.configureEach {
                     val component = this
-                    val publication = run {
-                        val origin = component.origin.get()
-                        val name = origin.publicationName(spec)
-                        when {
-                            origin is Component.Origin.SoftwareComponent -> {
-                                publishing.publications.create(name, MavenPublication::class)
-                            }
-                            origin is Component.Origin.MavenPublication && origin.clone -> {
-                                publishing.publications.create(name, MavenPublication::class)
-                            }
-                            else -> publishing.publications[name] as MavenPublication
-                        }
-                    }
+                    val publication = maybeCreatePublication(publishing.publications, spec)
                     component.whenConfigurable(target) {
+                        val enabled = component.enabled.get()
                         log { "${spec.name}: component is now configurable" }
                         target.configureArtifacts(spec, component, publication)
                         target.configureSigning(spec, publication)
@@ -83,6 +72,7 @@ class DeployerPlugin : Plugin<Project> {
                         val mavenPublish = tasks.named("publish${publication.name.capitalize()}Publication" +
                                 "To${repository.name.capitalize()}Repository")
                         mavenPublish.configure {
+                            this.enabled = enabled
                             doFirst {
                                 spec.configureMavenRepository(target, repository)
                                 spec.validateMavenArtifacts(target, publication.artifacts)
