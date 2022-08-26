@@ -16,6 +16,7 @@ internal inline fun Project.log(message: () -> String) {
     }
 }
 
+@Suppress("unused")
 class DeployerPlugin : Plugin<Project> {
 
     override fun apply(target: Project) {

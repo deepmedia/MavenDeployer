@@ -14,7 +14,6 @@ class Secret(val key: String) {
 
 private val localPropertiesCache = ConcurrentHashMap<Project, Properties>()
 
-
 private fun Project.findSecret(key: String): String? {
     // Try with environmental variable.
     val env: String? = System.getenv(key)

@@ -122,7 +122,14 @@ internal fun Project.configurePom(
     maven.version = spec.release.resolvedVersion.get()
     maven.pom.name.set(spec.projectInfo.resolvedName)
     maven.pom.url.set(spec.projectInfo.url)
-    maven.pom.description.set(spec.projectInfo.resolvedDescription)
+    val description = spec.projectInfo.resolvedDescription.zip(spec.release.resolvedDescription) { pr, r ->
+        when {
+            r.isBlank() -> pr
+            pr.isBlank() -> r
+            else -> "$pr ($r)"
+        }
+    }
+    maven.pom.description.set(description)
     spec.release.resolvedPackaging.orNull?.let { maven.pom.packaging = it }
     maven.pom.licenses {
         spec.projectInfo.licenses.forEach {
