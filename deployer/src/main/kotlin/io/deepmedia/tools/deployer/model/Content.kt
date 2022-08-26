@@ -41,6 +41,7 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     internal fun resolve(project: Project, spec: DeploySpec) {
         val inferred = inferredComponents(project)
         inferred.all { allComponents.add(this) }
@@ -64,54 +65,21 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                     // Kotlin multiplatform projects have one artifact per target, plus one for metadata.
                     val kotlin = project.kotlinExtension as KotlinMultiplatformExtension
                     kotlin.targets.all {
-                        val target = this
-                        component {
-                            val isMetadata = target.platformType == KotlinPlatformType.common
-                            fromMavenPublication(if (isMetadata) "kotlinMultiplatform" else target.name, clone = true)
-                            if (!isMetadata) {
-                                artifactId.set { "$it-${target.name.toLowerCase()}" }
-                                // https://github.com/JetBrains/kotlin/blob/v1.7.0/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/plugin/mpp/Publishing.kt#L83
-                                // Need to configure not only when the publication is created, but also after it is configured
-                                // with a software component, which in Kotlin Gradle Plugin happens in afterEvaluate after
-                                // dispatching the mavenPublication blocks. If we don't take care of this detail, publications
-                                // can fail and/or not include gradle module metadata.
-                                configureWhen { block ->
-                                    target.mavenPublication {
-                                        afterEvaluate { block() }
-                                    }
-                                }
-                            } else {
-                                // metadata publication, mavenPublication is not called. But luckily when it is added it
-                                // already has the component so no extra configureWhen is needed here. See:
-                                // https://youtrack.jetbrains.com/issue/KT-53300
-                            }
-                        }
+                        component { fromKotlinTarget(this@all, clone = true) }
                     }
                 }
-                project.isGradlePluginProject -> {
+                project.isGradlePluginProject -> run {
                     // When java-gradle-plugin is applied and isAutomatedPublishing is true, X+1 publications
                     // are created. First is "pluginMaven" with the artifact, and the rest are plugin markers
                     // called "<PLUGIN_NAME>PluginMarkerMaven". Markers have no jar, just pom file.
                     val gradlePlugin = project.extensions.getByType<GradlePluginDevelopmentExtension>()
-                    if (gradlePlugin.isAutomatedPublishing) {
+                    if (!gradlePlugin.isAutomatedPublishing) return@run
+                    component {
+                        fromMavenPublication("pluginMaven", clone = true)
+                    }
+                    gradlePlugin.plugins.all {
                         component {
-                            fromMavenPublication("pluginMaven", clone = true)
-                            // These help with sonatype publications
-                            // TODO: add them in validateArtifacts so only for sonatype and only if missing
-                            sources(project.tasks.makeEmptySourcesJar)
-                            docs(project.tasks.makeEmptyJavadocJar)
-                        }
-                        gradlePlugin.plugins.all {
-                            val plugin = this
-                            component {
-                                fromMavenPublication("${plugin.name}PluginMarkerMaven", clone = true)
-                                groupId.set { plugin.id }
-                                artifactId.set { plugin.id + ".gradle.plugin" }
-                                // These help with sonatype publications
-                                // TODO: add them in validateArtifacts so only for sonatype and only if missing
-                                sources(project.tasks.makeEmptySourcesJar)
-                                docs(project.tasks.makeEmptyJavadocJar)
-                            }
+                            fromGradlePluginDeclaration(this@all, clone = true)
                         }
                     }
                 }

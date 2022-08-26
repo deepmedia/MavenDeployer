@@ -85,7 +85,7 @@ class DeployerPlugin : Plugin<Project> {
                         mavenPublish.configure {
                             doFirst {
                                 spec.configureMavenRepository(target, repository)
-                                spec.validateMavenArtifacts(publication.artifacts)
+                                spec.validateMavenArtifacts(target, publication.artifacts)
                                 spec.validateMavenPom(publication.pom)
                             }
                         }

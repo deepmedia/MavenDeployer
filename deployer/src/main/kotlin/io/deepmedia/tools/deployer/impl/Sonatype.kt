@@ -1,6 +1,6 @@
 package io.deepmedia.tools.deployer.impl
 
-import io.deepmedia.tools.deployer.dump
+import io.deepmedia.tools.deployer.*
 import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.isJavadocJar
 import io.deepmedia.tools.deployer.isSourcesJar
@@ -18,7 +18,6 @@ import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.internal.publication.MavenPomInternal
 import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.property
-import org.jetbrains.kotlin.gradle.utils.`is`
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -51,14 +50,21 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         return true
     }
 
-    override fun validateMavenArtifacts(artifacts: MavenArtifactSet) {
-        super.validateMavenArtifacts(artifacts)
-        fun err(type: String): String {
+    override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet) {
+        super.validateMavenArtifacts(target, artifacts)
+        /* fun err(type: String): String {
             return "Sonatype requires a $type jar artifact. Please add it to your component. " +
                     "Available artifacts: " + artifacts.dump()
         }
         require(artifacts.any { it.isSourcesJar }) { err("sources") }
-        require(artifacts.any { it.isJavadocJar }) { err("javadoc") }
+        require(artifacts.any { it.isJavadocJar }) { err("javadoc") } */
+
+        if (artifacts.none { it.isSourcesJar }) {
+            artifacts.artifact(target.tasks.makeEmptySourcesJar)
+        }
+        if (artifacts.none { it.isJavadocJar }) {
+            artifacts.artifact(target.tasks.makeEmptyJavadocJar)
+        }
     }
 
     // https://central.sonatype.org/pages/requirements.html

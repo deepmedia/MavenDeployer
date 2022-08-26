@@ -27,7 +27,7 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
         url.set("https://bitbucket.org/$user/$repository")
         connection.set("scm:git:git://bitbucket.org/$user/$repository.git")
         developerConnection.set("scm:git:ssh://bitbucket.org:$user/$repository.git")
-        sourceUrl { tag -> "https://bitbucket.org/$user/$repository/src/" }
+        sourceUrl { _ /* tag */ -> "https://bitbucket.org/$user/$repository/src/" }
     }
 
     internal fun fallback(to: Scm) {
@@ -36,6 +36,7 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
         developerConnection.fallback(to.developerConnection)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
         resolvedUrl = url.orElse(spec.projectInfo.url)
         sourceUrl.convention(resolvedUrl.map { resolvedUrl ->

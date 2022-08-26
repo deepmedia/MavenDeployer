@@ -77,7 +77,7 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
 
     internal abstract fun configureMavenRepository(target: Project, repository: MavenArtifactRepository)
 
-    internal open fun validateMavenArtifacts(artifacts: MavenArtifactSet) = Unit
+    internal open fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet) = Unit
 
     internal open fun validateMavenPom(pom: MavenPom) = Unit
 }
