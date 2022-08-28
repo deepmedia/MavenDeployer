@@ -30,7 +30,8 @@ internal fun Project.configurePom(
     maven.version = spec.release.resolvedVersion.get()
     maven.pom.name.set(spec.projectInfo.resolvedName)
     maven.pom.url.set(spec.projectInfo.url)
-    val description = spec.projectInfo.resolvedDescription.zip(spec.release.resolvedDescription) { pr, r ->
+    val description = spec.projectInfo.resolvedDescription.orElse("")
+        .zip(spec.release.resolvedDescription.orElse("")) { pr, r ->
         when {
             r.isBlank() -> pr
             pr.isBlank() -> r
