@@ -3,13 +3,27 @@ import io.deepmedia.tools.deployer.impl.SonatypeAuth
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.8.0-rc12"
+    id("io.deepmedia.tools.deployer") version "0.8.1-rc01"
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:7.0.4")
+    compileOnly("com.android.tools.build:gradle:7.2.2")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
-    api("org.jetbrains.dokka:dokka-gradle-plugin:1.6.20")
+    api("org.jetbrains.dokka:dokka-gradle-plugin:1.7.10")
+}
+
+// Gradle 7.X has embedded kotlin version 1.6, but kotlin-dsl plugins are compiled with 1.4 for compatibility with older
+// gradle versions (I guess). 1.4 is very old and generates a warning, so let's bump to the embedded kotlin version.
+// https://handstandsam.com/2022/04/13/using-the-kotlin-dsl-gradle-plugin-forces-kotlin-1-4-compatibility/
+// https://github.com/gradle/gradle/blob/7a69f2f3d791044b946040cd43097ce57f430ca8/subprojects/kotlin-dsl-plugins/src/main/kotlin/org/gradle/kotlin/dsl/plugins/dsl/KotlinDslCompilerPlugins.kt#L48-L49
+afterEvaluate {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions {
+            val embedded = embeddedKotlinVersion.split(".").take(2).joinToString(".")
+            apiVersion = embedded
+            languageVersion = embedded
+        }
+    }
 }
 
 // To publish the plugin itself...
@@ -25,7 +39,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.8.0"
+version = "0.9.0"
 
 deployer {
     verbose.set(true)
@@ -42,6 +56,8 @@ deployer {
             key.set(secret("SIGNING_KEY"))
             password.set(secret("SIGNING_PASSWORD"))
         }
+        content.autoDocs()
+        content.autoSources()
     }
 
     // use "deployLocal" to deploy to local maven repository

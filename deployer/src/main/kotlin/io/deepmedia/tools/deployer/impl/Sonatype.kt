@@ -1,13 +1,14 @@
 package io.deepmedia.tools.deployer.impl
 
-import io.deepmedia.tools.deployer.dump
 import io.deepmedia.tools.deployer.fallback
-import io.deepmedia.tools.deployer.isJavadocJar
-import io.deepmedia.tools.deployer.isSourcesJar
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
 import io.deepmedia.tools.deployer.model.Secret
+import io.deepmedia.tools.deployer.tasks.isDocsJar
+import io.deepmedia.tools.deployer.tasks.isSourcesJar
+import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
+import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -18,7 +19,6 @@ import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.internal.publication.MavenPomInternal
 import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.property
-import org.jetbrains.kotlin.gradle.utils.`is`
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -51,14 +51,21 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         return true
     }
 
-    override fun validateMavenArtifacts(artifacts: MavenArtifactSet) {
-        super.validateMavenArtifacts(artifacts)
-        fun err(type: String): String {
+    override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet) {
+        super.validateMavenArtifacts(target, artifacts)
+        /* fun err(type: String): String {
             return "Sonatype requires a $type jar artifact. Please add it to your component. " +
                     "Available artifacts: " + artifacts.dump()
         }
         require(artifacts.any { it.isSourcesJar }) { err("sources") }
-        require(artifacts.any { it.isJavadocJar }) { err("javadoc") }
+        require(artifacts.any { it.isJavadocJar }) { err("javadoc") } */
+
+        if (artifacts.none { it.isSourcesJar }) {
+            artifacts.artifact(target.makeEmptySourcesJar)
+        }
+        if (artifacts.none { it.isDocsJar }) {
+            artifacts.artifact(target.makeEmptyDocsJar)
+        }
     }
 
     // https://central.sonatype.org/pages/requirements.html

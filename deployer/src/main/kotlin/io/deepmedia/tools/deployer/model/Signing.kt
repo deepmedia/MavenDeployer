@@ -15,6 +15,7 @@ open class Signing @Inject constructor(objects: ObjectFactory) : SecretScope {
         password.fallback(to.password)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
         // Nothing to do
     }

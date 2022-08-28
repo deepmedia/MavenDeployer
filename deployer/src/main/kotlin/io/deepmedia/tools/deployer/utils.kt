@@ -3,6 +3,7 @@
 package io.deepmedia.tools.deployer
 
 import com.android.build.gradle.LibraryPlugin
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaBasePlugin
@@ -15,13 +16,10 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.registering
+import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
-import java.io.FileInputStream
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 
 internal fun <T> Property<T>.fallback(value: T) {
@@ -60,13 +58,23 @@ internal val Project.isGradlePluginProject get() = plugins.any { it is JavaGradl
 
 internal val Project.isAndroidLibraryProject get() = hasAndroidPluginClasspath && plugins.any { it is LibraryPlugin }
 
+internal val Project.isKmpProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
 internal val Project.isKotlinProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinBasePluginWrapper }
 
-internal val Project.isKotlinMultiplatformProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
-
-internal val MavenArtifact.isSourcesJar get() = classifier == "sources" && extension == "jar"
-
-internal val MavenArtifact.isJavadocJar get() = classifier == "javadoc" && extension == "jar"
+// internal fun Project.whenJavaPluginApplied(block: () -> Unit) = whenPluginApplied<JavaBasePlugin>(block)
+// internal fun Project.whenGradlePluginPluginApplied(block: () -> Unit) = whenPluginApplied<JavaGradlePluginPlugin>(block)
+// internal fun Project.whenAndroidLibraryPluginApplied(block: () -> Unit) {
+//     if (hasAndroidPluginClasspath) whenPluginApplied<LibraryPlugin>(block)
+// }
+/* internal fun Project.whenKmpPluginApplied(block: () -> Unit) {
+    if (!hasKotlinPluginClasspath) return
+    whenPluginApplied<KotlinMultiplatformPluginWrapper>(block)
+}
+// Not the recommended way but the other approach - use plugin IDs - requires to know the ID and it's not
+// clear if withId() is invoked when the plugin is applied manually or only in the plugin block
+internal inline fun <reified P: Plugin<*>> Project.whenPluginApplied(crossinline block: () -> Unit) {
+    plugins.withType<P>().all { block() }
+} */
 
 internal fun MavenArtifactSet.dump(): String {
     return if (isEmpty()) "[]"
@@ -79,12 +87,4 @@ internal inline fun <reified T: Task> TaskContainer.maybeRegister(name: String, 
     return runCatching { named<T>(name) }.getOrElse {
         register<T>(name) { configure() }
     }
-}
-
-internal val TaskContainer.makeEmptySourcesJar get() = maybeRegister<Jar>("makeEmptySourcesJar") {
-    archiveClassifier.set("sources")
-}
-
-internal val TaskContainer.makeEmptyJavadocJar get() = maybeRegister<Jar>("makeEmptyJavadocJar") {
-    archiveClassifier.set("javadoc")
 }

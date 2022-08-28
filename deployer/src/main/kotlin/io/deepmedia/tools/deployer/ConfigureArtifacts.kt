@@ -2,14 +2,13 @@ package io.deepmedia.tools.deployer
 
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Component
+import io.deepmedia.tools.deployer.tasks.isDocsJar
+import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.Project
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.kotlin.dsl.get
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.plugins.signing.SigningExtension
 
 internal fun Project.configureArtifacts(
     spec: AbstractDeploySpec<*>,
@@ -75,77 +74,21 @@ internal fun Project.configureArtifacts(
     }
 
     // Add docs, but not if they are present already! Otherwise publishing will fail.
-    if (maven.artifacts.none { it.isJavadocJar }) {
+    if (maven.artifacts.none { it.isDocsJar }) {
         component.docs.orNull?.let {
             log { "${spec.name}: adding docs to MavenPublication ${maven.name}" }
             maven.artifact(it).builtBy(it)
         }
     }
 
-    log { "configureArtifacts(${spec.name}): final artifacts: ${maven.artifacts.dump()}" }
-}
-
-internal fun Project.configureSigning(
-    spec: AbstractDeploySpec<*>,
-    maven: MavenPublication,
-) {
-    // Configure signing if present
-    if (spec.hasSigning(this)) {
-        log { "configureSigning(${spec.name}): signing MavenPublication ${maven.name}" }
-        val ext = extensions.getByType(SigningExtension::class)
-        val key = spec.signing.key.get().resolve(this, "spec.signing.key")
-        val password = spec.signing.password.get().resolve(this, "spec.signing.password")
-        ext.useInMemoryPgpKeys(key, password)
+    component.extras.configureEach {
+        log { "${spec.name}: adding extra $this to MavenPublication ${maven.name}" }
         try {
-            ext.sign(maven)
+            maven.artifact(this).builtBy(this)
         } catch (e: Throwable) {
-            logger.log(
-                LogLevel.WARN, "Two or more specs share the same MavenPublication under the hood! " +
-                        "Only one of the signatures will be used, and other configuration parameters " +
-                        "might be conflicting as well.")
+            throw IllegalArgumentException("Could not add extra $this to publication ${maven.name} of DeploySpec $spec", e)
         }
     }
-}
 
-internal fun Project.configurePom(
-    spec: AbstractDeploySpec<*>,
-    component: Component,
-    maven: MavenPublication
-) {
-    log { "configurePom(${spec.name}): configuring MavenPublication ${maven.name}" }
-    maven.groupId = spec.projectInfo.resolvedGroupId.get().let { base ->
-        component.groupId.orNull?.transform(base) ?: base
-    }
-    maven.artifactId = spec.projectInfo.resolvedArtifactId.get().let { base ->
-        component.artifactId.orNull?.transform(base) ?: base
-    }
-    maven.version = spec.release.resolvedVersion.get()
-    maven.pom.name.set(spec.projectInfo.resolvedName)
-    maven.pom.url.set(spec.projectInfo.url)
-    maven.pom.description.set(spec.projectInfo.resolvedDescription)
-    spec.release.resolvedPackaging.orNull?.let { maven.pom.packaging = it }
-    maven.pom.licenses {
-        spec.projectInfo.licenses.forEach {
-            license {
-                name.set(it.id)
-                url.set(it.url)
-            }
-        }
-    }
-    maven.pom.developers {
-        spec.projectInfo.developers.forEach {
-            developer {
-                name.set(it.name)
-                email.set(it.email)
-                organization.set(it.organization)
-                organizationUrl.set(it.url)
-            }
-        }
-    }
-    maven.pom.scm {
-        tag.set(spec.release.resolvedTag)
-        url.set(spec.projectInfo.scm.sourceUrl.map { it.transform(spec.release.resolvedTag.get()) })
-        connection.set(spec.projectInfo.scm.connection)
-        developerConnection.set(spec.projectInfo.scm.developerConnection)
-    }
+    log { "configureArtifacts(${spec.name}): final artifacts: ${maven.artifacts.dump()}" }
 }

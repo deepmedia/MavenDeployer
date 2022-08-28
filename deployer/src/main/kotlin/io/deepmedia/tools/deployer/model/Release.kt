@@ -28,6 +28,7 @@ open class Release @Inject constructor(objects: ObjectFactory) {
         packaging.fallback(to.packaging)
     }
 
+    @Suppress("UNUSED_PARAMETER")
     internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
         // Version defaults to target.version.
         // Tag defaults to v$version.

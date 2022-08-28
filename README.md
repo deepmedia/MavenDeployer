@@ -21,7 +21,7 @@ pluginManagement {
 
 // build.gradle.kts of deployable modules
 plugins {
-    id("io.deepmedia.tools.deployer") version "0.8.0"
+    id("io.deepmedia.tools.deployer") version "0.9.0"
 }
 ```
 
@@ -95,16 +95,32 @@ To declare custom components, simply add them to `spec.content`. Two types of cu
 ```kotlin
 deployer {
     defaultSpec.content {
-        component {
-            fromSoftwareComponent("mySoftwareComponent")
-        }
-        component {
-            // cloning the publication makes sure that it can be shared across multiple specs.
-            fromMavenPublication("myMavenPublication", clone = true)
-        }
+        softwareComponent("mySoftwareComponent") { ... }
+        
+        // cloning the publication makes sure that it can be shared across multiple specs.
+        mavenPublication("myMavenPublication", clone = false) { ... }
+        
+        // other options: under the hood, they call softwareComponent or mavenPublication
+        kotlinTarget(myKotlinTarget, clone = false) { ... }
+        gradlePluginDeclaration(myPluginDeclaration, clone = false) { ... }
     }
 }
 ```
+
+### Component extras
+
+The component builders mentioned above describe the main published artifact (for example, a jar with binary code).
+It is possible however to add more files to the publication:
+
+- sources: use `component.sources(mySourcesTask)`
+- javadocs: use `component.docs(myJavadocTask)`
+- other artifacts: use `component.extras.add(...)`
+
+You can also leverage automatic sources and/or docs depending on your project. Use:
+
+- `content.emptySources()` or `content.emptyDocs()` to create an empty JAR. Might be useful for some repositories that require these jars to be present.
+- `content.autoSources()` to add a sources JAR, configured based on your project
+- `content.autoDocs()` to add a documentation JAR, for Kotlin projects only (uses Dokka under the hood)
 
 # Spec configuration
 
