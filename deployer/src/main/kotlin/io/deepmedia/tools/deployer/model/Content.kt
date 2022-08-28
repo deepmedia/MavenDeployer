@@ -1,6 +1,10 @@
 package io.deepmedia.tools.deployer.model
 
 import io.deepmedia.tools.deployer.*
+import io.deepmedia.tools.deployer.tasks.makeAutoDocsJar
+import io.deepmedia.tools.deployer.tasks.makeAutoSourcesJar
+import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
+import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
 import org.gradle.api.Action
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
@@ -27,14 +31,39 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         allComponents.add(component)
     }
 
+    private val sourcesInjection = objects.property<String>()
+    private val docsInjection = objects.property<String>()
+
     internal fun fallback(to: Content) {
         infer.fallback(to.infer)
+        sourcesInjection.fallback(to.sourcesInjection)
+        docsInjection.fallback(to.docsInjection)
         to.allComponents.all { allComponents.add(this) }
         to.allComponents.whenObjectRemoved { allComponents.remove(this) }
     }
 
+    fun emptySources() { sourcesInjection.set("empty") }
+    fun emtpyDocs() { docsInjection.set("empty") }
+    fun autoDocs() { docsInjection.set("auto") }
+    fun autoSources() { sourcesInjection.set("auto") }
+
     @Suppress("UNUSED_PARAMETER")
-    internal fun resolve(project: Project, spec: DeploySpec) {}
+    internal fun resolve(project: Project, spec: DeploySpec) {
+        val sourcesInjection = sourcesInjection.orNull
+        val docsInjection = docsInjection.orNull
+        allComponents.configureEach {
+            when (sourcesInjection) {
+                "empty" -> sources(project.makeEmptySourcesJar)
+                "auto" -> sources(project.makeAutoSourcesJar)
+                else -> { /* Not supported */ }
+            }
+            when (docsInjection) {
+                "empty" -> docs(project.makeEmptyDocsJar)
+                "auto" -> docs(project.makeAutoDocsJar)
+                else -> { /* Not supported */ }
+            }
+        }
+    }
 
     companion object {
         internal fun inferred(project: Project): DomainObjectSet<Component> {
@@ -71,12 +100,9 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                     }
                     // TODO: starting from 7.1.0, user has many options. we should read from AGP extension.
                     // https://android.googlesource.com/platform/tools/base/+/refs/heads/mirror-goog-studio-main/build-system/gradle-api/src/main/java/com/android/build/api/dsl/LibraryPublishing.kt
-                    project.isAndroidLibraryProject -> {
-                        component { fromSoftwareComponent("release") }
-                    }
-                    project.isJavaProject -> {
-                        component { fromSoftwareComponent("java") }
-                    }
+                    project.isAndroidLibraryProject -> component { fromSoftwareComponent("release") }
+                    project.isKotlinProject -> component { fromSoftwareComponent("kotlin") }
+                    project.isJavaProject -> component { fromSoftwareComponent("java") }
                 }
             }
             return set

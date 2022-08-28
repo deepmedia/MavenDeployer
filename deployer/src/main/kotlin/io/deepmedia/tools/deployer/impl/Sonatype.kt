@@ -1,13 +1,14 @@
 package io.deepmedia.tools.deployer.impl
 
-import io.deepmedia.tools.deployer.*
 import io.deepmedia.tools.deployer.fallback
-import io.deepmedia.tools.deployer.isJavadocJar
-import io.deepmedia.tools.deployer.isSourcesJar
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
 import io.deepmedia.tools.deployer.model.Secret
+import io.deepmedia.tools.deployer.tasks.isDocsJar
+import io.deepmedia.tools.deployer.tasks.isSourcesJar
+import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
+import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -60,10 +61,10 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         require(artifacts.any { it.isJavadocJar }) { err("javadoc") } */
 
         if (artifacts.none { it.isSourcesJar }) {
-            artifacts.artifact(target.tasks.makeEmptySourcesJar)
+            artifacts.artifact(target.makeEmptySourcesJar)
         }
-        if (artifacts.none { it.isJavadocJar }) {
-            artifacts.artifact(target.tasks.makeEmptyJavadocJar)
+        if (artifacts.none { it.isDocsJar }) {
+            artifacts.artifact(target.makeEmptyDocsJar)
         }
     }
 

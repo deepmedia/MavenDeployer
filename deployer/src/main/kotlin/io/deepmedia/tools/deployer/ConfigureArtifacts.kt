@@ -2,14 +2,13 @@ package io.deepmedia.tools.deployer
 
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Component
+import io.deepmedia.tools.deployer.tasks.isDocsJar
+import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.Project
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.kotlin.dsl.get
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.plugins.signing.SigningExtension
 
 internal fun Project.configureArtifacts(
     spec: AbstractDeploySpec<*>,
@@ -75,7 +74,7 @@ internal fun Project.configureArtifacts(
     }
 
     // Add docs, but not if they are present already! Otherwise publishing will fail.
-    if (maven.artifacts.none { it.isJavadocJar }) {
+    if (maven.artifacts.none { it.isDocsJar }) {
         component.docs.orNull?.let {
             log { "${spec.name}: adding docs to MavenPublication ${maven.name}" }
             maven.artifact(it).builtBy(it)

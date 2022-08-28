@@ -3,7 +3,7 @@ import io.deepmedia.tools.deployer.impl.SonatypeAuth
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.8.0"
+    id("io.deepmedia.tools.deployer") version "0.8.1-rc01"
 }
 
 dependencies {
@@ -39,7 +39,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.8.1"
+version = "0.9.0"
 
 deployer {
     verbose.set(true)
@@ -56,12 +56,12 @@ deployer {
             key.set(secret("SIGNING_KEY"))
             password.set(secret("SIGNING_PASSWORD"))
         }
+        content.autoDocs()
+        content.autoSources()
     }
 
     // use "deployLocal" to deploy to local maven repository
-    localSpec() /* {
-        directory.set(file("build/xxx"))
-    } */
+    localSpec()
 
     val sonatypeAuth: SonatypeAuth.() -> Unit = {
         user.set(secret("SONATYPE_USER"))

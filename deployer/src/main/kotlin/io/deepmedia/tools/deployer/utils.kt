@@ -59,13 +59,13 @@ internal val Project.isGradlePluginProject get() = plugins.any { it is JavaGradl
 internal val Project.isAndroidLibraryProject get() = hasAndroidPluginClasspath && plugins.any { it is LibraryPlugin }
 
 internal val Project.isKmpProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
+internal val Project.isKotlinProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinBasePluginWrapper }
 
 // internal fun Project.whenJavaPluginApplied(block: () -> Unit) = whenPluginApplied<JavaBasePlugin>(block)
 // internal fun Project.whenGradlePluginPluginApplied(block: () -> Unit) = whenPluginApplied<JavaGradlePluginPlugin>(block)
 // internal fun Project.whenAndroidLibraryPluginApplied(block: () -> Unit) {
 //     if (hasAndroidPluginClasspath) whenPluginApplied<LibraryPlugin>(block)
 // }
-// internal val Project.isKotlinProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinBasePluginWrapper }
 /* internal fun Project.whenKmpPluginApplied(block: () -> Unit) {
     if (!hasKotlinPluginClasspath) return
     whenPluginApplied<KotlinMultiplatformPluginWrapper>(block)
@@ -75,10 +75,6 @@ internal val Project.isKmpProject get() = hasKotlinPluginClasspath && plugins.an
 internal inline fun <reified P: Plugin<*>> Project.whenPluginApplied(crossinline block: () -> Unit) {
     plugins.withType<P>().all { block() }
 } */
-
-internal val MavenArtifact.isSourcesJar get() = classifier == "sources" && extension == "jar"
-
-internal val MavenArtifact.isJavadocJar get() = classifier == "javadoc" && extension == "jar"
 
 internal fun MavenArtifactSet.dump(): String {
     return if (isEmpty()) "[]"
@@ -91,12 +87,4 @@ internal inline fun <reified T: Task> TaskContainer.maybeRegister(name: String, 
     return runCatching { named<T>(name) }.getOrElse {
         register<T>(name) { configure() }
     }
-}
-
-internal val TaskContainer.makeEmptySourcesJar get() = maybeRegister<Jar>("makeEmptySourcesJar") {
-    archiveClassifier.set("sources")
-}
-
-internal val TaskContainer.makeEmptyJavadocJar get() = maybeRegister<Jar>("makeEmptyJavadocJar") {
-    archiveClassifier.set("javadoc")
 }
