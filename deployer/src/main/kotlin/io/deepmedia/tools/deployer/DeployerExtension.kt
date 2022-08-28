@@ -1,5 +1,6 @@
 package io.deepmedia.tools.deployer
 
+import io.deepmedia.tools.deployer.impl.DefaultDeploySpec
 import io.deepmedia.tools.deployer.impl.GithubDeploySpec
 import io.deepmedia.tools.deployer.impl.LocalDeploySpec
 import io.deepmedia.tools.deployer.impl.SonatypeDeploySpec
@@ -16,7 +17,7 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
 
     private val objects = target.objects
 
-    val defaultSpec = DefaultDeploySpec(objects)
+    val defaultSpec = DefaultDeploySpec(target)
 
     fun defaultSpec(action: Action<DefaultDeploySpec>) {
         action.execute(defaultSpec)

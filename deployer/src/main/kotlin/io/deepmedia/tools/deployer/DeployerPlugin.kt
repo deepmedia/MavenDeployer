@@ -58,12 +58,11 @@ class DeployerPlugin : Plugin<Project> {
                 log { "${spec.name}: created publishing repository '${repository.name}'" }
 
                 // Process components
-                log { "${spec.name}: processing ${components.size} components" }
+                log { "${spec.name}: processing ${spec.content.components.size}+ components" }
                 spec.content.components.configureEach {
                     val component = this
                     val publication = maybeCreatePublication(publishing.publications, spec)
                     component.whenConfigurable(target) {
-                        val enabled = component.enabled.get()
                         log { "${spec.name}: component is now configurable" }
                         target.configureArtifacts(spec, component, publication)
                         target.configureSigning(spec, publication)
@@ -73,7 +72,7 @@ class DeployerPlugin : Plugin<Project> {
                         val mavenPublish = tasks.named("publish${publication.name.capitalize()}Publication" +
                                 "To${repository.name.capitalize()}Repository")
                         mavenPublish.configure {
-                            this.enabled = enabled
+                            onlyIf { component.enabled.get() }
                             doFirst {
                                 spec.configureMavenRepository(target, repository)
                                 spec.validateMavenArtifacts(target, publication.artifacts)

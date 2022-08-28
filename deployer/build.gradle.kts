@@ -9,7 +9,7 @@ plugins {
 dependencies {
     compileOnly("com.android.tools.build:gradle:7.2.2")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
-    api("org.jetbrains.dokka:dokka-gradle-plugin:1.6.20")
+    api("org.jetbrains.dokka:dokka-gradle-plugin:1.7.10")
 }
 
 // Gradle 7.X has embedded kotlin version 1.6, but kotlin-dsl plugins are compiled with 1.4 for compatibility with older
@@ -59,7 +59,9 @@ deployer {
     }
 
     // use "deployLocal" to deploy to local maven repository
-    localSpec()
+    localSpec() /* {
+        directory.set(file("build/xxx"))
+    } */
 
     val sonatypeAuth: SonatypeAuth.() -> Unit = {
         user.set(secret("SONATYPE_USER"))

@@ -35,6 +35,7 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
     }
 
     override fun fallback(to: DeploySpec) {
+        super.fallback(to)
         if (to is GithubDeploySpec) {
             owner.fallback(to.owner)
             repository.fallback(to.repository)

@@ -5,14 +5,10 @@ import org.gradle.api.Action
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import javax.inject.Inject
 
 open class Content @Inject constructor(private val objects: ObjectFactory) : ComponentScope {
@@ -33,26 +29,15 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
 
     internal fun fallback(to: Content) {
         infer.fallback(to.infer)
-        to.allComponents.all {
-            allComponents.add(this)
-        }
-        to.allComponents.whenObjectRemoved {
-            allComponents.remove(this)
-        }
+        to.allComponents.all { allComponents.add(this) }
+        to.allComponents.whenObjectRemoved { allComponents.remove(this) }
     }
 
     @Suppress("UNUSED_PARAMETER")
-    internal fun resolve(project: Project, spec: DeploySpec) {
-        val inferred = inferredComponents(project)
-        inferred.all { allComponents.add(this) }
-        inferred.whenObjectRemoved { allComponents.remove(this) }
-    }
+    internal fun resolve(project: Project, spec: DeploySpec) {}
 
     companion object {
-        // TODO: could save to project.extensions
-        private val inferredComponents = mutableMapOf<Project, DomainObjectSet<Component>>()
-
-        private fun inferredComponents(project: Project) = inferredComponents.getOrPut(project) {
+        internal fun inferred(project: Project): DomainObjectSet<Component> {
             val set = project.objects.domainObjectSet(Component::class)
             fun component(configure: Component.() -> Unit) {
                 val comp: Component = project.objects.newInstance()
@@ -60,39 +45,41 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
                 comp.inferred = true
                 set.add(comp)
             }
-            when {
-                project.isKotlinMultiplatformProject -> {
+            project.afterEvaluate {
+                when {
                     // Kotlin multiplatform projects have one artifact per target, plus one for metadata.
-                    val kotlin = project.kotlinExtension as KotlinMultiplatformExtension
-                    kotlin.targets.all {
-                        component { fromKotlinTarget(this@all, clone = true) }
+                    project.isKmpProject -> {
+                        val kotlin = project.kotlinExtension as KotlinMultiplatformExtension
+                        kotlin.targets.all {
+                            component { fromKotlinTarget(this@all, clone = true) }
+                        }
                     }
-                }
-                project.isGradlePluginProject -> run {
                     // When java-gradle-plugin is applied and isAutomatedPublishing is true, X+1 publications
                     // are created. First is "pluginMaven" with the artifact, and the rest are plugin markers
                     // called "<PLUGIN_NAME>PluginMarkerMaven". Markers have no jar, just pom file.
-                    val gradlePlugin = project.extensions.getByType<GradlePluginDevelopmentExtension>()
-                    if (!gradlePlugin.isAutomatedPublishing) return@run
-                    component {
-                        fromMavenPublication("pluginMaven", clone = true)
-                    }
-                    gradlePlugin.plugins.all {
+                    project.isGradlePluginProject -> run {
+                        val gradlePlugin = project.extensions.getByType<GradlePluginDevelopmentExtension>()
+                        if (!gradlePlugin.isAutomatedPublishing) return@run
                         component {
-                            fromGradlePluginDeclaration(this@all, clone = true)
+                            fromMavenPublication("pluginMaven", clone = true)
+                        }
+                        gradlePlugin.plugins.all {
+                            component {
+                                fromGradlePluginDeclaration(this@all, clone = true)
+                            }
                         }
                     }
-                }
-                project.isAndroidLibraryProject -> {
-                    // TODO: from 7.1.0, user has many options. we should read from AGP extension.
+                    // TODO: starting from 7.1.0, user has many options. we should read from AGP extension.
                     // https://android.googlesource.com/platform/tools/base/+/refs/heads/mirror-goog-studio-main/build-system/gradle-api/src/main/java/com/android/build/api/dsl/LibraryPublishing.kt
-                    component { fromSoftwareComponent("release") }
-                }
-                project.isJavaProject -> {
-                    component { fromSoftwareComponent("java") }
+                    project.isAndroidLibraryProject -> {
+                        component { fromSoftwareComponent("release") }
+                    }
+                    project.isJavaProject -> {
+                        component { fromSoftwareComponent("java") }
+                    }
                 }
             }
-            set
+            return set
         }
     }
 }

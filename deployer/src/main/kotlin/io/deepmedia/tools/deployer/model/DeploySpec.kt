@@ -19,20 +19,6 @@ interface DeploySpec : Named {
     val signing: Signing
 }
 
-class DefaultDeploySpec internal constructor(objects: ObjectFactory) : DeploySpec {
-    override fun getName() = "_default"
-    override val auth: Auth = objects.newInstance()
-    override val content: Content = objects.newInstance()
-    override val projectInfo: ProjectInfo = objects.newInstance()
-    override val release: Release = objects.newInstance()
-    override val signing: Signing = objects.newInstance()
-    fun auth(action: Action<Auth>) { action.execute(auth) }
-    fun content(action: Action<Content>) { action.execute(content) }
-    fun projectInfo(action: Action<ProjectInfo>) { action.execute(projectInfo) }
-    fun release(action: Action<Release>) { action.execute(release) }
-    fun signing(action: Action<Signing>) { action.execute(signing) }
-}
-
 abstract class AbstractDeploySpec<A: Auth> constructor(
     objects: ObjectFactory,
     private val name: String,

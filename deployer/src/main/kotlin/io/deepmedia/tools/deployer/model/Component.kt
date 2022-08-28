@@ -1,8 +1,6 @@
 package io.deepmedia.tools.deployer.model
 
-import io.deepmedia.tools.deployer.isKotlinMultiplatformProject
-import io.deepmedia.tools.deployer.makeEmptyJavadocJar
-import io.deepmedia.tools.deployer.makeEmptySourcesJar
+import io.deepmedia.tools.deployer.isKmpProject
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.Transformer
@@ -68,7 +66,7 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     }
 
     fun fromKotlinTarget(target: KotlinTarget, clone: Boolean = false) {
-        if (!target.project.isKotlinMultiplatformProject) {
+        if (!target.project.isKmpProject) {
             // TODO: test this
             fromSoftwareComponent("kotlin", tag = target)
         } else if (target.platformType == KotlinPlatformType.common) {
@@ -123,6 +121,7 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     }
 }
 
+@Suppress("unused")
 interface ComponentScope {
     fun component(action: Action<Component>)
 
