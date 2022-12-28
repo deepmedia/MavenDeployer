@@ -4,6 +4,7 @@ import io.deepmedia.tools.deployer.isKmpProject
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.Transformer
+import org.gradle.api.XmlProvider
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublicationContainer
@@ -35,6 +36,7 @@ open class Component @Inject constructor(objects: ObjectFactory) {
             else -> (origin as Origin.MavenPublication).name
         }
         return when {
+            publications.findByName(name) != null -> publications[name] as MavenPublication
             origin is Origin.SoftwareComponent -> publications.create(name, MavenPublication::class)
             origin is Origin.MavenPublication && origin.clone -> publications.create(name, MavenPublication::class)
             else -> publications[name] as MavenPublication
@@ -119,6 +121,8 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     internal fun configureWhen(block: Project.(configurationBlock: () -> Unit) -> Unit) {
         configureWhenBlock = block
     }
+
+    internal var xml: ((XmlProvider, (Component) -> MavenPublication) -> Unit)? = null
 }
 
 @Suppress("unused")
