@@ -64,4 +64,10 @@ internal fun Project.configurePom(
         connection.set(spec.projectInfo.scm.connection)
         developerConnection.set(spec.projectInfo.scm.developerConnection)
     }
+    maven.pom.withXml {
+        component.xml?.invoke(this) { componentToFetch ->
+            val publishing = this@configurePom.extensions.getByType(PublishingExtension::class.java)
+            componentToFetch.maybeCreatePublication(publishing.publications, spec)
+        }
+    }
 }

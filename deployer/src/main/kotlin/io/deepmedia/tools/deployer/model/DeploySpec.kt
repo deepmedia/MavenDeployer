@@ -6,8 +6,10 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.publish.maven.MavenPom
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.newInstance
 import kotlin.reflect.KClass
 
