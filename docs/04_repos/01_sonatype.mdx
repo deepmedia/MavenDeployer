@@ -1,0 +1,45 @@
+---
+title: Sonatype & Maven Central
+---
+
+# Sonatype & Maven Central
+
+Add a new spec with `sonatypeSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL
+of the sonatype repo. This defaults to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/` -
+the Sonatype OSSRH which can be synced to Maven Central.
+
+Sonatype repositories make many fields mandatory:
+- authentication: use the `auth` block as shown below
+- signing
+- valid project url and scm
+- at least one developer and a license
+- possibly more
+
+Deployment will fail with clear errors notifying you about what's missing.
+
+```kotlin
+deployer {
+    // Common configuration...
+    project.description.set("Handy tool to publish maven packages in different repositories.")
+
+    sonatypeSpec {
+        // Sonatype configuration...
+        repositoryUrl.set(ossrh1)
+
+        // Credentials used to register the package group into the OSSRH repository...
+        auth.user.set(secret("SONATYPE_USER"))
+        auth.password.set(secret("SONATYPE_PASSWORD"))
+
+        // Signing is required
+        signing.key.set(secret("SIGNING_KEY"))
+        signing.password.set(secret("SIGNING_PASSWORD"))
+    }
+
+    // If needed, you can add other named specs.
+    sonatypeSpec("snapshot") {
+        repositoryUrl.set(ossrhSnapshots1)
+        release.version.set("latest-SNAPSHOT")
+        ...
+    }
+}
+```

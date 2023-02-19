@@ -1,0 +1,33 @@
+---
+title: Install
+---
+
+# Install
+
+## Build configuration
+
+To use `MavenDeployer` in your project, add the following lines:
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+// build.gradle.kts of deployable modules
+plugins {
+    id("io.deepmedia.tools.deployer") version "0.9.0"
+}
+```
+
+## Snapshots
+
+The plugin uses an older version of itself to publish itself to the Maven Central repository
+and to GitHub Packages. This means that you can check the plugin source code to see an example of how to use it.
+
+It also uses itself to publish snapshots to `https://s01.oss.sonatype.org/content/repositories/snapshots/`
+on each push to main. To use the snapshots, add the url as a maven repository and depend on
+`id("io.deepmedia.tools.deployer") version "latest-SNAPSHOT"`.

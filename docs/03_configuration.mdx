@@ -1,0 +1,80 @@
+---
+title: Spec configuration
+---
+
+# Spec configuration
+
+In addition to its artifacts, the `DeploySpec` interface offers a simple DSL to configure other common parameters of
+a publication. Under the hood, these will be applied to the publication's POM file.
+
+## Project info
+
+Use the `projectInfo` property or configuration block:
+
+```kotlin
+// Inside a spec...
+projectInfo {
+   // Project name. Defaults to rootProject.name
+   name.set("MavenDeployer")
+   // Project description. Defaults to rootProject.name
+   description.set("Handy tool to publish maven packages in different repositories.")
+   // Project url
+   url.set("https://github.com/deepmedia/MavenDeployer")
+   // Package group id. Defaults to project's group
+   groupId.set("io.deepmedia.tools")
+   // Package artifact. Defaults to project's archivesName or project.name
+   artifactId.set("deployer")
+   // Project SCM information. Defaults to project.url
+   scm {
+       // or: fromGithub("deepmedia", "MavenDeployer")
+       // or: fromBitbucket("deepmedia", "MavenDeployer")
+       // or: set url, connection and developerConnection directly
+   }
+   // Licenses. Apache 2.0 and MIT are built-in
+   license(apache2)
+   license(MIT)
+   license("MyLicense", "mylicense.com")
+   // Developers
+   developer("natario1", "mattia@deepmedia.io")
+}
+```
+
+## Release details
+
+Use the `release` property or configuration block:
+
+```kotlin
+// Inside a spec...
+release {
+   // Release version. Defaults to project.version, or AGP configured version for Android projects
+   release.version.set("1.0.0")
+   // Release VCS tag. Defaults to "v${release.version}"
+   release.tag.set("v0.1.4")
+   // Release description. Defaults to "${project.name} {release.tag}"
+   release.description.set("Brand new release")
+   // Release packaging. Automatically set to AAR for Android libraries
+   project.packaging = "jar"
+}
+```
+
+## Signing configuration
+
+Use the `signing` property or configuration block:
+
+```kotlin
+// Inside a spec...
+signing {
+   key.set(secret("SIGNING_KEY"))
+   password.set(secret("SIGNING_PASSWORD"))
+}
+```
+
+The signing key and password are considered **secrets**. This means that you will not pass the actual value to
+the deployer, but rather a lookup string. This lookup string can be:
+
+- The name of some environment variables that contains the resolved secret
+- The name of a Gradle property containing the resolved secret, resolved with `project.findProperty(lookup)`
+- The name of a property in the `local.properties` file, if present
+
+The resolved key and password are then passed to the `signing` plugin using [`useInMemoryPgpKeys`](https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys),
+to sign the publication artifacts.

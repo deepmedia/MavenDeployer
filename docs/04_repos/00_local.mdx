@@ -1,0 +1,20 @@
+---
+title: Local directory
+---
+
+# Local directory
+
+Add a new spec with `localSpec {}`. The only configurable property is the directory into which to publish the artifacts:
+
+```kotlin
+deployer {
+    localSpec {
+        directory.set(file("my/dir/here"))
+    }
+
+    // If needed, you can add other named specs.
+    localSpec("other") { ... }
+}
+```
+
+If the directory is not set, this defaults to the `mavenLocal()` repository.
