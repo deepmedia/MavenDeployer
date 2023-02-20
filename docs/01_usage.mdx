@@ -1,0 +1,41 @@
+---
+title: Usage and tasks
+---
+
+# Usage and tasks
+
+## Usage
+
+Plugin configuration happens through the `deployer` extension. You act on it by adding one or more `DeploySpec`s
+and configuring them. In addition, the `defaultSpec` can be used to configure default values that will be propagated
+to all other specs.
+
+```kotlin
+deployer {
+    defaultSpec {
+        release.version.set("1.0.0")
+    }
+
+    sonatypeSpec {
+        // release.version is 1.0.0
+        ...
+    }
+
+    sonatypeSpec("snapshot") {
+        release.version.set("1.0.0-SNAPSHOT") // override default value
+        ...
+    }
+}
+```
+
+## Tasks
+
+For each spec, the plugin will register a gradle task named `deploy<SpecType><SpecName>`. The spec type is either local,
+github, or sonatype. The name defaults to `""` but can be configured. In addition, an extra task called `deployAll` will be
+generated, running all deployments at once. In the example above, the following tasks are generated:
+
+- `deploySonatype`
+- `deploySonatypeSnapshot`
+- `deployAll`
+
+> **Note**: Use ./gradlew tasks --group='Deployment' to list all deploy tasks.

@@ -1,0 +1,59 @@
+---
+title: Spec artifacts
+---
+
+# Spec artifacts
+
+The contents of a deploy spec (e.g. AARs, JARs, additional artifacts like sources or javadocs) can be configured at `spec.content`.
+Each spec can support multiple components, each one corresponding to a maven publication and pom file.
+
+## Component inference
+
+By default, the plugin will try to infer the spec components based on the project structure and plugins. We currently
+support the following use cases:
+
+1. Kotlin Multiplatform projects: enabled when the Kotlin Multiplatform plugin is applied.
+   The deploy spec will have one component per target, plus one component publishing the 'common' metadata.
+2. Android libraries: enabled when `com.android.library` plugin is applied.
+   The deploy spec will have a single component based on the release AAR.
+3. Gradle Plugins: enabled when `java-gradle-plugin` plugin is applied and `gradlePlugin.isAutomatedPublishing` is true.
+   The deploy spec will have one component for the project, and one gradle marker component for each plugin in `gradlePlugin.plugins`.
+4. Java projects: enabled when the java base plugin is applied.
+   The deploy spec will have a single component from the `java` software component.
+
+## Custom components
+
+To declare custom components, simply add them to `spec.content`. Two types of custom components are supported:
+
+- Based on an existing Gradle [SoftwareComponent](https://docs.gradle.org/current/javadoc/org/gradle/api/component/SoftwareComponent.html)
+- Based on an existing Gradle [MavenPublication](https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html)
+
+```kotlin
+deployer {
+    defaultSpec.content {
+        softwareComponent("mySoftwareComponent") { ... }
+
+        // cloning the publication makes sure that it can be shared across multiple specs.
+        mavenPublication("myMavenPublication", clone = false) { ... }
+
+        // other options: under the hood, they call softwareComponent or mavenPublication
+        kotlinTarget(myKotlinTarget, clone = false) { ... }
+        gradlePluginDeclaration(myPluginDeclaration, clone = false) { ... }
+    }
+}
+```
+
+## Component extras
+
+The component builders mentioned above describe the main published artifact (for example, a jar with binary code).
+It is possible however to add more files to the publication:
+
+- sources: use `component.sources(mySourcesTask)`
+- javadocs: use `component.docs(myJavadocTask)`
+- other artifacts: use `component.extras.add(...)`
+
+You can also leverage automatic sources and/or docs depending on your project. Use:
+
+- `content.emptySources()` or `content.emptyDocs()` to create an empty JAR. Might be useful for some repositories that require these jars to be present.
+- `content.autoSources()` to add a sources JAR, configured based on your project
+- `content.autoDocs()` to add a documentation JAR, for Kotlin projects only (uses Dokka under the hood)

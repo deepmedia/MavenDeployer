@@ -1,0 +1,34 @@
+---
+title: Github Packages
+---
+
+# Github Packages
+
+Add a new spec with `githubSpec {}`. It adds two mandatory properties, `owner` and `repository`, which
+are used to identify the GitHub repository.
+
+In addition to this, it is also mandatory to authenticate to GitHub using your username and a
+[personal access token](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages#about-scopes-and-permissions-for-package-registries).
+These can be added as secrets to the `auth` block, as shown below.
+
+```kotlin
+deployer {
+    // Common configuration...
+    project.description.set("Handy tool to publish maven packages in different repositories.")
+
+    githubSpec {
+        // Identify the GitHub repository: deepmedia/MavenDeployer
+        owner.set("deepmedia")
+        repository.set("MavenDeployer")
+
+        // Personal GitHub username and a personal access token linked to it
+        auth.user.set(secret("GITHUB_USER"))
+        auth.token.set(secret("GITHUB_TOKEN"))
+    }
+
+    // If needed, you can add other named specs.
+    githubSpec("private") {
+        ...
+    }
+}
+```
