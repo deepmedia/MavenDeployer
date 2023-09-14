@@ -26,7 +26,7 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         it.inferred == infer.getOrElse(true)
     }
 
-    override fun component(action: Action<Component>) {
+    override fun addComponent(action: Action<Component>) {
         val component: Component = objects.newInstance()
         action.execute(component)
         allComponents.add(component)
@@ -55,12 +55,12 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         allComponents.configureEach {
             when (sourcesInjection) {
                 "empty" -> sources(project.makeEmptySourcesJar)
-                "auto" -> sources(project.makeAutoSourcesJar)
+                "auto" -> sources(project.makeAutoSourcesJar(this))
                 else -> { /* Not supported */ }
             }
             when (docsInjection) {
                 "empty" -> docs(project.makeEmptyDocsJar)
-                "auto" -> docs(project.makeAutoDocsJar)
+                "auto" -> docs(project.makeAutoDocsJar(this))
                 else -> { /* Not supported */ }
             }
         }

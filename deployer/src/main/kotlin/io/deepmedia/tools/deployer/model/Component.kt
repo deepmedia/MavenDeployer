@@ -11,35 +11,43 @@ import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.domainObjectSet
-import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.property
 import org.gradle.plugin.devel.PluginDeclaration
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import javax.inject.Inject
 
-open class Component @Inject constructor(objects: ObjectFactory) {
+open class Component @Inject constructor(private val objects: ObjectFactory) {
 
     internal sealed class Origin(val tag: Any?) {
         class MavenPublication(val name: String, val clone: Boolean = false, tag: Any? = null) : Origin(tag)
         class SoftwareComponent(val name: String, tag: Any? = null) : Origin(tag)
+        class ArtifactSet(val artifacts: Artifacts) : Origin(null) {
+            val id = ids++
+            companion object {
+                var ids = 0
+            }
+        }
     }
 
     internal val origin: Property<Origin> = objects.property()
 
     internal fun maybeCreatePublication(publications: PublicationContainer, spec: DeploySpec): MavenPublication {
         val origin = origin.get()
-        val name = when {
-            origin is Origin.SoftwareComponent -> origin.name + "SoftwareFor" + spec.name.capitalize()
-            origin is Origin.MavenPublication && origin.clone -> origin.name + "ClonedFor" + spec.name.capitalize()
-            else -> (origin as Origin.MavenPublication).name
+        val name = when (origin) {
+            is Origin.SoftwareComponent -> origin.name + "SoftwareFor" + spec.name.capitalize()
+            is Origin.MavenPublication -> when {
+                origin.clone -> origin.name + "ClonedFor" + spec.name.capitalize()
+                else -> origin.name
+            }
+            is Origin.ArtifactSet -> "artifacts" + origin.id + "For" + spec.name.capitalize()
         }
+        val existing = publications.findByName(name)
         return when {
-            publications.findByName(name) != null -> publications[name] as MavenPublication
-            origin is Origin.SoftwareComponent -> publications.create(name, MavenPublication::class)
-            origin is Origin.MavenPublication && origin.clone -> publications.create(name, MavenPublication::class)
-            else -> publications[name] as MavenPublication
+            existing != null -> existing as MavenPublication
+            origin is Origin.MavenPublication && !origin.clone -> error("Source publication ${origin.name} not found.")
+            else -> publications.create(name, MavenPublication::class)
         }
     }
 
@@ -76,6 +84,13 @@ open class Component @Inject constructor(objects: ObjectFactory) {
             // for metadata publication, mavenPublication is not called. But luckily when it is added it
             // already has the component so no extra configureWhen is needed here. See:
             // https://youtrack.jetbrains.com/issue/KT-53300
+
+            // Starting from 1.9.0, it might. TODO: no, this more likely is avoiding the publication altogether
+            /* configureWhen { block ->
+                target.mavenPublication {
+                    afterEvaluate { block() }
+                }
+            } */
         } else {
             fromMavenPublication(target.name, clone = clone, tag = target)
             artifactId.set { "$it-${target.name.lowercase()}" }
@@ -96,6 +111,14 @@ open class Component @Inject constructor(objects: ObjectFactory) {
         fromMavenPublication("${declaration.name}PluginMarkerMaven", clone = clone, tag = declaration)
         groupId.set { declaration.id }
         artifactId.set { declaration.id + ".gradle.plugin" }
+        isMarker.set(true) // markers should not have docs/jars, see `isMarker` comments
+    }
+
+    fun fromArtifactSet(artifacts: Action<Artifacts>) {
+        val container: Artifacts = objects.newInstance()
+        artifacts.execute(container)
+        origin.set(Origin.ArtifactSet(container))
+        configureWhen { block -> block() }
     }
 
     internal val sources: Property<Any> = objects.property()
@@ -103,12 +126,19 @@ open class Component @Inject constructor(objects: ObjectFactory) {
     fun sources(task: Any?) { sources.set(task) }
     fun docs(task: Any?) { docs.set(task) }
 
-    val extras = objects.domainObjectSet(Any::class)
+    val extras: Artifacts = objects.newInstance()
 
     val groupId = objects.property<Transformer<String, String>>()
     val artifactId = objects.property<Transformer<String, String>>()
 
     val enabled: Property<Boolean> = objects.property<Boolean>().convention(true)
+
+    // Whether this is a fake/marker/wrapper component that should NOT have autodocs and autosources
+    // Ideally we should infer this from the component origin using some special logic, but for now
+    // we use this flag to fix some signing conflict when publishing gradle plugins.
+    // (both marker publication and main publication produce the very same javadoc jar, and they both sign it
+    //  on the same file location. Gradle gets confused and notices a missing cross-dependency between the two pubs)
+    internal val isMarker: Property<Boolean> = objects.property<Boolean>().convention(false)
 
     internal fun whenConfigurable(project: Project, block: () -> Unit) {
         require(::configureWhenBlock.isInitialized) {
@@ -127,25 +157,31 @@ open class Component @Inject constructor(objects: ObjectFactory) {
 
 @Suppress("unused")
 interface ComponentScope {
-    fun component(action: Action<Component>)
+    fun addComponent(action: Action<Component>)
 
-    fun softwareComponent(name: String, action: Action<Component> = Action {  }) = component {
+    /* fun addSoftwareComponent(name: String, action: Action<Component> = Action {  }) = addComponent {
         fromSoftwareComponent(name)
         action.execute(this)
     }
 
-    fun mavenPublication(name: String, clone: Boolean = false, action: Action<Component> = Action {  }) = component {
+    fun addMavenPublicationComponent(name: String, clone: Boolean = false, action: Action<Component> = Action {  }) = addComponent {
         fromMavenPublication(name, clone)
         action.execute(this)
     }
 
-    fun kotlinTarget(target: KotlinTarget, clone: Boolean = false, action: Action<Component> = Action {  }) = component {
+    fun addKotlinTargetComponent(target: KotlinTarget, clone: Boolean = false, action: Action<Component> = Action {  }) = addComponent {
         fromKotlinTarget(target, clone)
         action.execute(this)
     }
 
-    fun gradlePluginDeclaration(declaration: PluginDeclaration, clone: Boolean = false, action: Action<Component> = Action {  }) = component {
+    fun addGradlePluginDeclarationComponent(declaration: PluginDeclaration, clone: Boolean = false, action: Action<Component> = Action {  }) = addComponent {
         fromGradlePluginDeclaration(declaration, clone)
         action.execute(this)
     }
+
+    fun addArtifactSetComponent(artifacts: Action<Artifacts>, action: Action<Component> = Action {  }) = addComponent {
+        fromArtifactSet(artifacts)
+        action.execute(this)
+    }
+     */
 }

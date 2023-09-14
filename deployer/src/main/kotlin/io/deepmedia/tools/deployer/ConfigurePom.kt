@@ -14,17 +14,18 @@ import org.gradle.plugins.signing.SigningExtension
 internal fun Project.configurePom(
     spec: AbstractDeploySpec<*>,
     component: Component,
-    maven: MavenPublication
+    maven: MavenPublication,
+    log: Logger
 ) {
-    log { "configurePom(${spec.name}): configuring MavenPublication ${maven.name}" }
+    log { "configurePom: configuring MavenPublication ${maven.name}" }
     maven.groupId = spec.projectInfo.resolvedGroupId.get().let { base ->
         val transformed = component.groupId.orNull?.transform(base)
-        log { "configurePom(${spec.name}): groupId base=$base unresolved=${spec.projectInfo.groupId.orNull} transformed=$transformed" }
+        log { "configurePom: computing groupId. base=$base unresolved=${spec.projectInfo.groupId.orNull} transformed=$transformed" }
         transformed ?: base
     }
     maven.artifactId = spec.projectInfo.resolvedArtifactId.get().let { base ->
         val transformed = component.artifactId.orNull?.transform(base)
-        log { "configurePom(${spec.name}): artifactId base=$base unresolved=${spec.projectInfo.artifactId.orNull} transformed=$transformed" }
+        log { "configurePom: computing artifactId: base=$base unresolved=${spec.projectInfo.artifactId.orNull} transformed=$transformed" }
         transformed ?: base
     }
     maven.version = spec.release.resolvedVersion.get()

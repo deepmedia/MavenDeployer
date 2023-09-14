@@ -6,6 +6,9 @@ import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.component.ComponentWithVariants
+import org.gradle.api.component.SoftwareComponent
+import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -78,8 +81,20 @@ internal inline fun <reified P: Plugin<*>> Project.whenPluginApplied(crossinline
 
 internal fun MavenArtifactSet.dump(): String {
     return if (isEmpty()) "[]"
-    else joinToString("\n\t", prefix = "\n\t") {
+    else joinToString(separator = "\n\t", prefix = "\n\t") {
         "${it.file.name} - ${it.extension} - ${it.classifier}"
+    }
+}
+
+internal fun SoftwareComponent.dump(): String {
+    val variants = runCatching { (this as SoftwareComponentInternal).usages }.getOrElse {
+        return "Exception: $it"
+    }
+    return variants.joinToString(separator = "\n\t", prefix = "\n\t") {
+        val artifacts = runCatching {
+            it.artifacts.map { "${it.name} (${it.file}, ${it.type}, ${it.extension}, ${it.classifier})" }
+        }.getOrElse { listOf("Exception: $it") }
+        "${it.name}: ${artifacts.joinToString(separator = "\n\t\t", prefix = "\n\t\t")}"
     }
 }
 

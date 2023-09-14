@@ -7,6 +7,7 @@ import io.deepmedia.tools.deployer.*
 import io.deepmedia.tools.deployer.isKmpProject
 import io.deepmedia.tools.deployer.isKotlinProject
 import io.deepmedia.tools.deployer.maybeRegister
+import io.deepmedia.tools.deployer.model.Component
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
@@ -30,8 +31,10 @@ internal val Project.makeEmptySourcesJar get() = tasks.maybeRegister<Jar>("makeE
     archiveClassifier.set("sources")
 }
 
-internal val Project.makeAutoSourcesJar get(): TaskProvider<Jar>? {
+internal fun Project.makeAutoSourcesJar(component: Component): TaskProvider<Jar>? {
     return when {
+        // Markers shouldn't have any docs
+        component.isMarker.get() -> null
         // Too hard to do, also not needed because KMP has sources.
         isKmpProject -> null
         // Android plugin extension now has option to enable sources, withSourcesJar().
