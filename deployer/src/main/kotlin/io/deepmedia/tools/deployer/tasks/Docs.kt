@@ -5,6 +5,7 @@ package io.deepmedia.tools.deployer.tasks
 import io.deepmedia.tools.deployer.isKmpProject
 import io.deepmedia.tools.deployer.isKotlinProject
 import io.deepmedia.tools.deployer.maybeRegister
+import io.deepmedia.tools.deployer.model.Component
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenArtifact
 import org.gradle.api.tasks.TaskContainer
@@ -20,7 +21,8 @@ internal val Project.makeEmptyDocsJar get() = tasks.maybeRegister<Jar>("makeEmpt
     archiveClassifier.set("javadoc")
 }
 
-internal val Project.makeAutoDocsJar get(): TaskProvider<Jar> {
+internal fun Project.makeAutoDocsJar(component: Component): TaskProvider<Jar>? {
+    if (component.isMarker.get()) return null // markers shouldn't have any jars
     if (!isKotlinProject) return makeEmptyDocsJar
     plugins.apply(DokkaPlugin::class)
     val dokkaHtml = tasks.named("dokkaHtml", DokkaTask::class.java)
