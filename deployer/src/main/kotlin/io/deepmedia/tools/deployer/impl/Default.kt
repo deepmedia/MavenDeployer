@@ -19,8 +19,8 @@ class DefaultDeploySpec internal constructor(project: Project) : DeploySpec {
     fun signing(action: Action<Signing>) { action.execute(signing) }
 
     init {
-        val inferredContent = Content.inferred(project)
-        inferredContent.all { content.allComponents.add(this) }
-        inferredContent.whenObjectRemoved { content.allComponents.remove(this) }
+        val inferredComponents = inferredComponents(project)
+        inferredComponents.all { content.allComponents.add(this) }
+        inferredComponents.whenObjectRemoved { content.allComponents.remove(this) }
     }
 }

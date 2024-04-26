@@ -33,6 +33,11 @@ internal fun Project.configureArtifacts(
     when (origin) {
         is Component.Origin.SoftwareComponent -> {
             log { "configureArtifacts: component-based, calling maven.from(SoftwareComponent)" }
+            log { "configureArtifacts: component dump: ${origin.component.dump()}" }
+            maven.from(origin.component)
+        }
+        is Component.Origin.SoftwareComponentName -> {
+            log { "configureArtifacts: component name-based, calling maven.from(SoftwareComponent)" }
             val softwareComponent = requireNotNull(components[origin.name]) { "Could not find software component ${origin.name}." }
             log { "configureArtifacts: component dump: ${softwareComponent.dump()}" }
             maven.from(softwareComponent)
@@ -41,7 +46,7 @@ internal fun Project.configureArtifacts(
             log { "configureArtifacts: artifact-based, copying artifacts over" }
             maven.addArtifacts(log, origin.artifacts)
         }
-        is Component.Origin.MavenPublication -> {
+        is Component.Origin.MavenPublicationName -> {
             if (!origin.clone) {
                 log { "configureArtifacts: publication-based, no clone, nothing to do" }
             } else {
@@ -90,8 +95,8 @@ internal fun Project.configureArtifacts(
                     if (artifacts != null) {
                         cloneArtifacts(artifacts)
                     } else {
-                        log { "configureArtifacts: fetching artifacts NOW failed. Delaying to afterEvaluate." }
-                        afterEvaluate { cloneArtifacts(originalPublication.artifacts) }
+                        log { "configureArtifacts: fetching artifacts NOW failed. Delaying to whenEvaluated." }
+                        whenEvaluated { cloneArtifacts(originalPublication.artifacts) }
                     }
                 }
 

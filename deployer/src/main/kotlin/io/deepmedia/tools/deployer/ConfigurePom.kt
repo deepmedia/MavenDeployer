@@ -40,7 +40,7 @@ internal fun Project.configurePom(
         }
     }
     maven.pom.description.set(description)
-    spec.release.resolvedPackaging.orNull?.let { maven.pom.packaging = it }
+    component.packaging.orNull?.let { maven.pom.packaging = it }
     maven.pom.licenses {
         spec.projectInfo.licenses.forEach {
             license {
