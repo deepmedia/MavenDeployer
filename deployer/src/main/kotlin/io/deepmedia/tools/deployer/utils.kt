@@ -3,23 +3,20 @@
 package io.deepmedia.tools.deployer
 
 import com.android.build.gradle.LibraryPlugin
-import org.gradle.api.Plugin
+import org.gradle.api.InvalidUserCodeException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.internal.component.SoftwareComponentInternal
+import org.gradle.api.internal.project.ProjectStateInternal
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.publish.maven.MavenArtifact
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
-import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
@@ -88,12 +85,12 @@ internal fun MavenArtifactSet.dump(): String {
 
 internal fun SoftwareComponent.dump(): String {
     val variants = runCatching { (this as SoftwareComponentInternal).usages }.getOrElse {
-        return "Exception: $it"
+        return "Can't dump: $it"
     }
     return variants.joinToString(separator = "\n\t", prefix = "\n\t") {
         val artifacts = runCatching {
             it.artifacts.map { "${it.name} (${it.file}, ${it.type}, ${it.extension}, ${it.classifier})" }
-        }.getOrElse { listOf("Exception: $it") }
+        }.getOrElse { listOf("Could not dump: $it") }
         "${it.name}: ${artifacts.joinToString(separator = "\n\t\t", prefix = "\n\t\t")}"
     }
 }
@@ -102,4 +99,22 @@ internal inline fun <reified T: Task> TaskContainer.maybeRegister(name: String, 
     return runCatching { named<T>(name) }.getOrElse {
         register<T>(name) { configure() }
     }
+}
+
+// Many projects use state.executed as a signal, but that's not exactly the condition
+// that makes afterEvaluate throws. And we don't want to drop afterEvaluate when possible,
+// because calling afterEvaluate inside an afterEvaluate, jumps to the next loop which is good
+// to execute stuff after other plugins.
+private fun Project.canCallAfterEvaluate(): Boolean {
+    val state = state
+    return if (state is ProjectStateInternal) {
+        state.isUnconfigured || state.isConfiguring
+    } else {
+        !state.executed // Less precise
+    }
+}
+
+internal fun Project.whenEvaluated(block: () -> Unit) {
+    if (canCallAfterEvaluate()) afterEvaluate { block() }
+    else block()
 }

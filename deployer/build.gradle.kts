@@ -1,17 +1,18 @@
 import io.deepmedia.tools.deployer.impl.SonatypeAuth
 import io.deepmedia.tools.deployer.model.DeploySpec
 import io.deepmedia.tools.deployer.model.Secret
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.9.2-alpha16"
+    id("io.deepmedia.tools.deployer") version "0.9.2-alpha24"
 }
 
 dependencies {
     compileOnly("com.android.tools.build:gradle:8.0.2")
     // compileOnly("com.android.tools.build:gradle:7.2.2")
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.10")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
     // api("org.jetbrains.dokka:dokka-gradle-plugin:1.7.10")
     api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
 }
@@ -43,7 +44,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.9.2-alpha19"
+version = "0.9.2-alpha25"
 
 deployer {
     verbose.set(true)
@@ -100,3 +101,7 @@ deployer {
     dependsOn("publishPluginMavenPublicationToMavenLocal")
     dependsOn("publishDeployerPluginMarkerMavenPublicationToMavenLocal")
 } */
+
+tasks.get("printProjectComponents").doLast {
+
+}

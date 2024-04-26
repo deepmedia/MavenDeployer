@@ -19,7 +19,6 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
 
     val verbose = target.objects.property<Boolean>().convention(false)
 
-    private val project = target
     private val objects = target.objects
 
     val defaultSpec = DefaultDeploySpec(target)

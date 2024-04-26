@@ -1,9 +1,7 @@
 package io.deepmedia.tools.deployer.model
 
-import org.gradle.api.Buildable
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.TaskDependency
 import org.gradle.kotlin.dsl.domainObjectSet
 import javax.inject.Inject
 
@@ -36,12 +34,12 @@ open class Artifacts @Inject constructor(objects: ObjectFactory) {
      * - A Callable. The call() method may return any of the types in this list.
      * - A Kotlin function or Groovy closure. It may return any of the types in this list.
      */
-    fun add(artifact: Any, builtBy: Any? = null) {
+    fun artifact(artifact: Any, builtBy: Any? = null) {
         entries.add(Entry(artifact, builtBy))
     }
 
-    fun add(artifact: Any, classifier: String, extension: String, builtBy: Any? = null) {
-        add(
+    fun artifact(artifact: Any, classifier: String, extension: String, builtBy: Any? = null) {
+        artifact(
             artifact = mapOf(
                 "source" to artifact,
                 "classifier" to classifier,
