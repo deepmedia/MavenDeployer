@@ -43,7 +43,7 @@ deployer {
             }
             component {
                 // cloning the publication makes sure that it can be shared across multiple specs.
-                fromMavenPublication("mavenPublicationName", clone = falase)
+                fromMavenPublication("mavenPublicationName", clone = false)
             }
             component {
                 fromKotlinTarget(myKotlinTarget)
