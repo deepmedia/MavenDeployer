@@ -30,7 +30,7 @@ internal fun Project.configureSigning(
             logger.log(
                 LogLevel.WARN, "Two or more specs share the same MavenPublication under the hood! " +
                         "Only one of the signatures will be used, and other configuration parameters " +
-                        "might be conflicting as well. Location: ${log.prefix}")
+                        "might be conflicting as well. Location: ${log.prefix} [${e.message}]")
         }
     }
     return null

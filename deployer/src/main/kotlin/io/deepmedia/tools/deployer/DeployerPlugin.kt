@@ -7,12 +7,9 @@ import io.deepmedia.tools.deployer.model.*
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.component.ComponentWithCoordinates
 import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.component.SoftwareComponent
-import org.gradle.api.internal.DefaultPolymorphicDomainObjectContainer
-import org.gradle.api.internal.PolymorphicDomainObjectContainerInternal
 import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.tasks.TaskProvider
@@ -131,9 +128,11 @@ class DeployerPlugin : Plugin<Project> {
                 if (sign != null) dependsOn(sign)
                 onlyIf { component.enabled.get() }
                 doFirst {
-                    spec.configureMavenRepository(target, repository)
-                    spec.validateMavenArtifacts(target, publication.artifacts)
+                    log { "Starting artifact and POM validation"}
+                    spec.resolveMavenRepository(target, repository)
+                    spec.validateMavenArtifacts(target, publication.artifacts, log)
                     spec.validateMavenPom(publication.pom)
+                    log { "Completed artifact and POM validation"}
                 }
             }
         }

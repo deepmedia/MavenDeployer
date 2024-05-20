@@ -23,10 +23,8 @@ internal fun Project.configurePom(
         log { "configurePom: computing groupId. base=$base unresolved=${spec.projectInfo.groupId.orNull} transformed=$transformed" }
         transformed ?: base
     }
-    maven.artifactId = spec.projectInfo.resolvedArtifactId.get().let { base ->
-        val transformed = component.artifactId.orNull?.transform(base)
-        log { "configurePom: computing artifactId: base=$base unresolved=${spec.projectInfo.artifactId.orNull} transformed=$transformed" }
-        transformed ?: base
+    maven.artifactId = spec.projectInfo.resolvedArtifactId(component).get().also {
+        log { "configurePom: computing artifactId: PI=${spec.projectInfo.artifactId.orNull} PI(resolved)=${spec.projectInfo.resolvedArtifactId.orNull} => $it" }
     }
     maven.version = spec.release.resolvedVersion.get()
     maven.pom.name.set(spec.projectInfo.resolvedName)
@@ -66,9 +64,7 @@ internal fun Project.configurePom(
         developerConnection.set(spec.projectInfo.scm.developerConnection)
     }
     maven.pom.withXml {
-        component.xml?.invoke(this) { componentToFetch ->
-            val publishing = this@configurePom.extensions.getByType(PublishingExtension::class.java)
-            componentToFetch.maybeCreatePublication(publishing.publications, spec)
-        }
+        val publications = this@configurePom.extensions.getByType(PublishingExtension::class.java).publications
+        component.xml?.invoke(this, spec, publications)
     }
 }

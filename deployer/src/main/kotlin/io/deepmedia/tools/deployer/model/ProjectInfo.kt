@@ -25,6 +25,13 @@ open class ProjectInfo @Inject constructor(private val objects: ObjectFactory) :
     internal lateinit var resolvedGroupId: Provider<String>
     internal lateinit var resolvedArtifactId: Provider<String>
 
+    internal fun resolvedArtifactId(component: Component): Provider<String> {
+        return resolvedArtifactId.map { base ->
+            val transformed = component.artifactId.orNull?.transform(base)
+            transformed ?: base
+        }
+    }
+
     override val scm: Scm = objects.newInstance()
 
     fun scm(action: Action<Scm>) {

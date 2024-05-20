@@ -12,6 +12,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.kotlin.dsl.*
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.plugin.devel.PluginDeclaration
@@ -141,11 +142,42 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         }
     }
 
-    fun fromGradlePluginDeclaration(declaration: PluginDeclaration, clone: Boolean = false) {
+    /**
+     * When `java-gradle-plugin` is applied and `isAutomatedPublishing` is true, X+1 publications are created:
+     * - a main publication called "pluginMaven" which will contain a JAR with code for all declared plugins
+     * - X marker publications called "${pluginName}PluginMarkerMaven". These have no JAR, they're just a pom file
+     *   with a single dependency.
+     *
+     * The function below can be used to make this component represent one of the marker artifacts.
+     * See MavenPluginPublishPlugin.createMavenMarkerPublication.
+     *
+     * Note: it is recommended to pass [mainComponent] as a reference to the main package containing all gradle plugins,
+     * which [PluginDeclaration] belongs to. This way, the marker artifact will have the correct dependency coordinates
+     * in case they were modified with respect to what [PluginDeclaration] uses by default.
+     */
+    fun fromGradlePluginDeclaration(declaration: PluginDeclaration, mainComponent: Component? = null, clone: Boolean = false) {
         fromMavenPublication("${declaration.name}PluginMarkerMaven", clone = clone, tag = declaration)
         groupId.set { declaration.id }
         artifactId.set { declaration.id + ".gradle.plugin" }
-        isMarker.set(true) // markers should not have docs/jars, see `isMarker` comments
+        if (mainComponent != null) {
+            xml = { xml, spec, publications ->
+                val mainPublication = mainComponent.maybeCreatePublication(publications, spec)
+                val root: Element = xml.asElement()
+                val oldDependencies = (0 until root.childNodes.length).map { root.childNodes.item(it) }.firstOrNull { it.nodeName == "dependencies" }
+                if (oldDependencies != null) {
+                    root.removeChild(oldDependencies)
+                }
+                fun makeNode(name: String) = root.ownerDocument.createElement(name)
+                root
+                    .appendChild(makeNode("dependencies"))
+                    .appendChild(makeNode("dependency"))
+                    .apply {
+                        appendChild(makeNode("groupId")).textContent = mainPublication.groupId
+                        appendChild(makeNode("artifactId")).textContent = mainPublication.artifactId
+                        appendChild(makeNode("version")).textContent = mainPublication.version
+                    }
+            }
+        }
     }
 
     fun fromArtifactSet(artifacts: Action<Artifacts>) {
@@ -172,7 +204,7 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
     // we use this flag to fix some signing conflict when publishing gradle plugins.
     // (both marker publication and main publication produce the very same javadoc jar, and they both sign it
     //  on the same file location. Gradle gets confused and notices a missing cross-dependency between the two pubs)
-    internal val isMarker: Property<Boolean> = objects.property<Boolean>().convention(false)
+    // internal val isMarker: Property<Boolean> = objects.property<Boolean>().convention(false)
 
     internal fun whenConfigurable(project: Project, block: () -> Unit) {
         require(::configureWhenBlock.isInitialized) {
@@ -186,7 +218,7 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         configureWhenBlock = block
     }
 
-    internal var xml: ((XmlProvider, (Component) -> MavenPublication) -> Unit)? = null
+    internal var xml: ((XmlProvider, AbstractDeploySpec<*>, PublicationContainer) -> Unit)? = null
 }
 
 @Suppress("unused")
@@ -251,23 +283,7 @@ internal fun inferredComponents(project: Project): DomainObjectSet<Component> {
                 }
                 gradlePlugin.plugins.all {
                     inferredComponent {
-                        fromGradlePluginDeclaration(this@all, clone = true)
-                        xml = { xml, publicationOf ->
-                            val mainPublication = publicationOf(mainComponent)
-                            val root: Element = xml.asElement()
-                            val oldDependencies = (0 until root.childNodes.length).map { root.childNodes.item(it) }.firstOrNull { it.nodeName == "dependencies" }
-                            if (oldDependencies != null) {
-                                root.removeChild(oldDependencies)
-                            }
-                            val dependencies = root.appendChild(root.ownerDocument.createElement("dependencies"))
-                            val dependency = dependencies.appendChild(root.ownerDocument.createElement("dependency"))
-                            val groupId = dependency.appendChild(root.ownerDocument.createElement("groupId"))
-                            groupId.textContent = mainPublication.groupId
-                            val artifactId = dependency.appendChild(root.ownerDocument.createElement("artifactId"))
-                            artifactId.textContent = mainPublication.artifactId
-                            val version = dependency.appendChild(root.ownerDocument.createElement("version"))
-                            version.textContent = mainPublication.version
-                        }
+                        fromGradlePluginDeclaration(this@all, mainComponent, clone = true)
                     }
                 }
             }

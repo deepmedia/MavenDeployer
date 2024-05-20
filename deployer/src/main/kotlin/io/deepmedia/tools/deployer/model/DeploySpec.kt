@@ -1,15 +1,14 @@
 package io.deepmedia.tools.deployer.model
 
+import io.deepmedia.tools.deployer.Logger
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.publish.maven.MavenPom
-import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.newInstance
 import kotlin.reflect.KClass
 
@@ -48,11 +47,11 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
     }
 
     internal fun resolve(target: Project) {
-        content.resolve(target, this)
         auth.resolve(target, this)
         projectInfo.resolve(target, this)
         release.resolve(target, this)
         signing.resolve(target, this)
+        content.resolve(target, this)
     }
 
     internal open fun hasSigning(target: Project): Boolean {
@@ -63,9 +62,13 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
 
     internal abstract fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository
 
-    internal abstract fun configureMavenRepository(target: Project, repository: MavenArtifactRepository)
+    internal abstract fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository)
 
-    internal open fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet) = Unit
+    internal open fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) = Unit
 
     internal open fun validateMavenPom(pom: MavenPom) = Unit
+
+    internal open fun provideDefaultSourcesForComponent(target: Project, component: Component): Any? = null
+
+    internal open fun provideDefaultDocsForComponent(target: Project, component: Component): Any? = null
 }

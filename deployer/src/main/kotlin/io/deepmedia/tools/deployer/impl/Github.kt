@@ -29,7 +29,7 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
         }
     }
 
-    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+    override fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository) {
         repository.credentials.username = auth.user.get().resolve(target, "spec.auth.user")
         repository.credentials.password = auth.token.get().resolve(target, "spec.auth.token")
     }

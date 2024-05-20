@@ -25,7 +25,7 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
         }
     }
 
-    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+    override fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository) {
         // Nothing to do
     }
 

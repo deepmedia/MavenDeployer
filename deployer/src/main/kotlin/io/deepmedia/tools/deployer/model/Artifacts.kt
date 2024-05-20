@@ -7,7 +7,16 @@ import javax.inject.Inject
 
 open class Artifacts @Inject constructor(objects: ObjectFactory) {
 
-    internal class Entry(val artifact: Any, val builtBy: Any?)
+    internal class Entry(val artifact: Any, val builtBy: Any?) {
+        constructor(artifact: Any, classifier: String, extension: String, builtBy: Any?) : this(
+            artifact = mapOf(
+                "source" to artifact,
+                "classifier" to classifier,
+                "extension" to extension
+            ),
+            builtBy = builtBy
+        )
+    }
 
     internal val entries = objects.domainObjectSet(Entry::class)
 
@@ -39,13 +48,6 @@ open class Artifacts @Inject constructor(objects: ObjectFactory) {
     }
 
     fun artifact(artifact: Any, classifier: String, extension: String, builtBy: Any? = null) {
-        artifact(
-            artifact = mapOf(
-                "source" to artifact,
-                "classifier" to classifier,
-                "extension" to extension
-            ),
-            builtBy = builtBy
-        )
+        entries.add(Entry(artifact, classifier, extension, builtBy))
     }
 }

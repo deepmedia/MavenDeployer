@@ -12,6 +12,7 @@ import org.gradle.api.internal.project.ProjectStateInternal
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.publish.maven.MavenArtifact
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
@@ -78,9 +79,11 @@ internal inline fun <reified P: Plugin<*>> Project.whenPluginApplied(crossinline
 
 internal fun MavenArtifactSet.dump(): String {
     return if (isEmpty()) "[]"
-    else joinToString(separator = "\n\t", prefix = "\n\t") {
-        "${it.file.name} - ${it.extension} - ${it.classifier}"
-    }
+    else joinToString(separator = "\n\t", prefix = "\n\t") { it.dump() }
+}
+
+internal fun MavenArtifact.dump(): String {
+    return "${file.name} - $extension - $classifier (${file.absolutePath})"
 }
 
 internal fun SoftwareComponent.dump(): String {

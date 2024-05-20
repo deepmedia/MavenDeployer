@@ -5,9 +5,6 @@ import io.deepmedia.tools.deployer.impl.GithubDeploySpec
 import io.deepmedia.tools.deployer.impl.LocalDeploySpec
 import io.deepmedia.tools.deployer.impl.SonatypeDeploySpec
 import io.deepmedia.tools.deployer.model.*
-import io.deepmedia.tools.deployer.tasks.makeAutoDocsJar
-import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
-import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
 import org.gradle.api.Action
 import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.api.tasks.TaskProvider

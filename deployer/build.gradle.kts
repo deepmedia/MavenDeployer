@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.10.0-rc1"
+    id("io.deepmedia.tools.deployer") version "0.10.0-rc2"
 }
 
 dependencies {

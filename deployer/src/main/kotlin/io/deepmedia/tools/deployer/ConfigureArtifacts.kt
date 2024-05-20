@@ -9,6 +9,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.kotlin.dsl.get
 
@@ -28,9 +29,7 @@ internal fun Project.configureArtifacts(
     maven: MavenPublication,
     log: Logger
 ) {
-    val publications = extensions.getByType(PublishingExtension::class.java).publications
-    val origin = component.origin.get()
-    when (origin) {
+    when (val origin = component.origin.get()) {
         is Component.Origin.SoftwareComponent -> {
             log { "configureArtifacts: component-based, calling maven.from(SoftwareComponent)" }
             log { "configureArtifacts: component dump: ${origin.component.dump()}" }
@@ -49,85 +48,93 @@ internal fun Project.configureArtifacts(
         is Component.Origin.MavenPublicationName -> {
             if (!origin.clone) {
                 log { "configureArtifacts: publication-based, no clone, nothing to do" }
+                // The maven publication we have is already the configured one
             } else {
                 log { "configureArtifacts: publication-based, cloning" }
                 // Cloning artifacts is tricky - from() will copy some of them,
                 // but there might be more and we can't allow duplicates.
-                val originalPublication = requireNotNull(publications[origin.name]) { "Could not find maven publication ${origin.name}." }
-                originalPublication as MavenPublicationInternal
-                maven as MavenPublicationInternal
-
-                // Add the SoftwareComponent, noting that some publications don't have any
-                // For example the plugin markers have only a pom file with no other content.
-                val originalComponent: SoftwareComponent? = originalPublication.softwareComponentOrNull
-                if (originalComponent != null) {
-                    maven.from(originalComponent)
-                    // This publication is now an alias of the other one. If we don't do this,
-                    // inter-project dependencies are broken. https://github.com/gradle/gradle/issues/1061
-                    // This is not important when there's no component, such publications are excluded by default.
-                    maven.isAlias = true
-                    log { "configureArtifacts: clone-based, has SoftwareComponent, making it an alias" }
-                    log { "configureArtifacts: component dump: ${originalComponent.dump()}" }
-
-                    // Note that we don't inspect artifacts with getArtifacts() in this branch because it's very dangerous.
-                    // getArtifacts() finalizes the underlying component and modifies the DefaultMavenPublication state
-                    // irreversibly (e.g. populated flag). This can break many things in the publishing process later on,
-                    // if the component was not fully populated.
-                } else {
-                    log { "configureArtifacts: clone-based, no SoftwareComponent. Using getArtifacts()" }
-                    log { "configureArtifacts: trying to clone original publication artifacts..." }
-                    fun cloneArtifacts(artifacts: MavenArtifactSet) {
-                        log { "configureArtifacts: cloning: ${artifacts.dump()}" }
-                        artifacts.configureEach {
-                            val contained = maven.artifacts.any { a ->
-                                a.classifier == classifier && a.extension == extension
-                            }
-                            log { "configureArtifacts: Processing artifact ${file.name} (ext:$extension classifier:$classifier contained:$contained)" }
-                            if (!contained) maven
-                                .artifact(this)
-                                .builtBy(this.buildDependencies)
-                        }
-                    }
-
-                    // NOTE: if a failure happens here, it means that, at the very least, Component.whenConfigurable
-                    // implementation is wrong
-                    val artifacts = runCatching { originalPublication.artifacts }.getOrNull()
-                    if (artifacts != null) {
-                        cloneArtifacts(artifacts)
-                    } else {
-                        log { "configureArtifacts: fetching artifacts NOW failed. Delaying to whenEvaluated." }
-                        whenEvaluated { cloneArtifacts(originalPublication.artifacts) }
-                    }
-                }
-
-                // Copy standalone XML actions. This is especially important for plugin markers
-                // in publications setup by java-gradle-plugin, see MavenPluginPublishPlugin.java.
-                maven.pom.withXml(originalPublication.pom.xmlAction)
+                val publications = extensions.getByType(PublishingExtension::class.java).publications
+                val source = requireNotNull(publications[origin.name]) { "Could not find maven publication ${origin.name}." }
+                clonePublication(source as MavenPublication, maven, log)
             }
         }
     }
 
     maven.addArtifacts(log, component.extras)
 
-    // TODO: The two operations down here require getArtifacts() which is a very problematic API (see above)
-    //  I removed the existence check but that also means that there might be duplication.
-    //  Let's try to fix that downstream maybe.
+    // TODO: The two operations down here required getArtifacts() which is a very problematic API
+    //  because it marks the DefaultMavenPublication as "populated" irreversibly
+    //  Removed the check, try to find another way to solve duplications, otherwise publishing can fail
 
-    // Add sources, but not if they are present already! Otherwise publishing will fail.
     // if (maven.artifacts.none { it.isSourcesJar }) {
-        component.sources.orNull?.let {
+        (component.sources.orNull ?: spec.provideDefaultSourcesForComponent(this, component))?.let {
             log { "configureArtifacts: adding sources to MavenPublication ${maven.name}" }
-            maven.artifact(it).builtBy(it)
+            if (it is Artifacts.Entry) maven.artifact(it.artifact).builtBy(it.builtBy)
+            else maven.artifact(it).builtBy(it)
         }
     // }
 
-    // Add docs, but not if they are present already! Otherwise publishing will fail.
     // if (maven.artifacts.none { it.isDocsJar }) {
-        component.docs.orNull?.let {
+        (component.docs.orNull ?: spec.provideDefaultDocsForComponent(this, component))?.let {
             log { "configureArtifacts: adding docs to MavenPublication ${maven.name}" }
-            maven.artifact(it).builtBy(it)
+            if (it is Artifacts.Entry) maven.artifact(it.artifact).builtBy(it.builtBy)
+            else maven.artifact(it).builtBy(it)
         }
     // }
+}
+
+private fun Project.clonePublication(
+    source: MavenPublication,
+    destination: MavenPublication,
+    log: Logger
+) {
+    source as MavenPublicationInternal
+    destination as MavenPublicationInternal
+
+    // Add the SoftwareComponent, noting that some publications don't have any
+    // For example the plugin markers have only a pom file with no other content.
+    val originalComponent: SoftwareComponent? = source.softwareComponentOrNull
+    if (originalComponent != null) {
+        log { "clonePublication: has SoftwareComponent, marking as alias... ${originalComponent.dump()}" }
+        destination.from(originalComponent)
+        // This publication is now an alias of the other one. If we don't do this,
+        // inter-project dependencies are broken. https://github.com/gradle/gradle/issues/1061
+        // This is not important when there's no component, such publications are excluded by default.
+        destination.isAlias = true
+
+        // Note that we don't inspect artifacts with getArtifacts() in this branch because it's very dangerous.
+        // getArtifacts() finalizes the underlying component and modifies the DefaultMavenPublication state
+        // irreversibly (e.g. populated flag). This can break many things in the publishing process later on,
+        // if the component was not fully populated.
+    } else {
+        // NOTE: if a failure happens here, it means that, at the very least, Component.whenConfigurable
+        // implementation is wrong
+        val sourceArtifacts = runCatching { source.artifacts }.getOrNull()
+        if (sourceArtifacts != null) {
+            log { "clonePublication: no SoftwareComponent, trying to clone original publication artifacts..." }
+            cloneArtifacts(sourceArtifacts, destination.artifacts, log)
+        } else {
+            log { "clonePublication: no SoftwareComponent, but fetching artifacts failed. Delaying to whenEvaluated." }
+            project.whenEvaluated { cloneArtifacts(source.artifacts, destination.artifacts, log) }
+        }
+    }
+
+    // Copy standalone XML actions. This is especially important for plugin markers
+    // in publications setup by java-gradle-plugin, see MavenPluginPublishPlugin.java.
+    destination.pom.withXml(source.pom.xmlAction)
+}
+
+private fun cloneArtifacts(source: MavenArtifactSet, destination: MavenArtifactSet, log: Logger) {
+    log { "cloneArtifacts: cloning ${source.dump()}" }
+    source.configureEach {
+        val contained = destination.any { a ->
+            a.classifier == classifier && a.extension == extension
+        }
+        log { "cloneArtifacts: cloning artifact ${this.dump()} (contained:$contained)..." }
+        if (!contained) destination
+            .artifact(this)
+            .builtBy(this.buildDependencies)
+    }
 }
 
 @Suppress("UNCHECKED_CAST")

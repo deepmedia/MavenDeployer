@@ -1,10 +1,8 @@
 package io.deepmedia.tools.deployer.model
 
 import io.deepmedia.tools.deployer.*
-import io.deepmedia.tools.deployer.tasks.makeAutoDocsJar
-import io.deepmedia.tools.deployer.tasks.makeAutoSourcesJar
-import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
-import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
+import io.deepmedia.tools.deployer.tasks.makeDocsJar
+import io.deepmedia.tools.deployer.tasks.makeSourcesJar
 import org.gradle.api.Action
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
@@ -50,20 +48,19 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
     fun autoDocs() { docsInjection.set("auto") }
     fun autoSources() { sourcesInjection.set("auto") }
 
-    @Suppress("UNUSED_PARAMETER")
     internal fun resolve(project: Project, spec: DeploySpec) {
-        val sourcesInjection = sourcesInjection.orNull
-        val docsInjection = docsInjection.orNull
+        val commonSources = sourcesInjection.orNull
+        val commonDocs = docsInjection.orNull
         allComponents.configureEach {
-            when (sourcesInjection) {
-                "empty" -> sources(project.makeEmptySourcesJar)
-                "auto" -> sources(project.makeAutoSourcesJar(this))
-                else -> { /* Not supported */ }
+            when {
+                sources.isPresent -> { /* already provided */ }
+                commonSources == "empty" -> sources(project.makeSourcesJar(spec, this, true))
+                commonSources == "auto" -> sources(project.makeSourcesJar(spec, this, false))
             }
-            when (docsInjection) {
-                "empty" -> docs(project.makeEmptyDocsJar)
-                "auto" -> docs(project.makeAutoDocsJar(this))
-                else -> { /* Not supported */ }
+            when {
+                docs.isPresent -> { /* already provided */ }
+                commonDocs == "empty" -> docs(project.makeDocsJar(spec, this, true))
+                commonDocs == "auto" -> docs(project.makeDocsJar(spec, this, false))
             }
         }
     }

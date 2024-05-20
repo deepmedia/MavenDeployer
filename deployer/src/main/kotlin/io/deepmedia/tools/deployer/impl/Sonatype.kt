@@ -1,14 +1,12 @@
 package io.deepmedia.tools.deployer.impl
 
+import io.deepmedia.tools.deployer.Logger
+import io.deepmedia.tools.deployer.dump
 import io.deepmedia.tools.deployer.fallback
-import io.deepmedia.tools.deployer.model.AbstractDeploySpec
-import io.deepmedia.tools.deployer.model.Auth
-import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.model.Secret
+import io.deepmedia.tools.deployer.model.*
+import io.deepmedia.tools.deployer.tasks.*
 import io.deepmedia.tools.deployer.tasks.isDocsJar
 import io.deepmedia.tools.deployer.tasks.isSourcesJar
-import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
-import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -39,7 +37,7 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         }
     }
 
-    override fun configureMavenRepository(target: Project, repository: MavenArtifactRepository) {
+    override fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository) {
         repository.credentials.username = auth.user.get().resolve(target, "spec.auth.user")
         repository.credentials.password = auth.password.get().resolve(target, "spec.auth.password")
     }
@@ -51,21 +49,43 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         return true
     }
 
-    override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet) {
-        super.validateMavenArtifacts(target, artifacts)
-        /* fun err(type: String): String {
-            return "Sonatype requires a $type jar artifact. Please add it to your component. " +
+    override fun provideDefaultDocsForComponent(target: Project, component: Component): Any {
+        return target.makeDocsJar(this, component, empty = true) // required by sonatype
+    }
+
+    override fun provideDefaultSourcesForComponent(target: Project, component: Component): Any? {
+        return target.makeSourcesJar(this, component, empty = true) // required by sonatype
+    }
+
+    override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) {
+        super.validateMavenArtifacts(target, artifacts, log)
+        fun err(type: String): String {
+            return "Sonatype requires a $type jar artifact. Please add it to your component; you may use utilities like emptyDocs() and emptySources(). " +
                     "Available artifacts: " + artifacts.dump()
         }
         require(artifacts.any { it.isSourcesJar }) { err("sources") }
-        require(artifacts.any { it.isJavadocJar }) { err("javadoc") } */
+        require(artifacts.any { it.isDocsJar }) { err("javadoc") }
 
-        if (artifacts.none { it.isSourcesJar }) {
-            artifacts.artifact(target.makeEmptySourcesJar)
+        // It's not possible to use the approach below given when this function is called (inside the task)
+        // because it would add a task dependency that will not be respected, because it's too late
+        /* var hasSources = false
+        var hasDocs = false
+        log { "validateMavenArtifacts(${artifacts.size})..."}
+        artifacts.forEach {
+            log { "validateMavenArtifacts: ${it.dump()}" }
+            hasSources = hasSources || it.isSourcesJar
+            hasDocs = hasDocs || it.isDocsJar
         }
-        if (artifacts.none { it.isDocsJar }) {
-            artifacts.artifact(target.makeEmptyDocsJar)
+        if (!hasSources) {
+            val make = target.makeEmptySourcesJar
+            val artifact = artifacts.artifact(make) { builtBy(make) }
+            log { "validateMavenArtifacts: added ${artifact.dump()} (sonatype requirement)"}
         }
+        if (!hasDocs) {
+            val make = target.makeEmptyDocsJar
+            val artifact = artifacts.artifact(make) { builtBy(make) }
+            log { "validateMavenArtifacts: added ${artifact.dump()} (sonatype requirement)"}
+        } */
     }
 
     // https://central.sonatype.org/pages/requirements.html
