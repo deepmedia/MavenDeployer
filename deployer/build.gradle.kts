@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.9.2-alpha24"
+    id("io.deepmedia.tools.deployer") version "0.10.0-rc1"
 }
 
 dependencies {
@@ -44,7 +44,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.9.2-alpha25"
+version = "0.10.0"
 
 deployer {
     verbose.set(true)
@@ -101,7 +101,3 @@ deployer {
     dependsOn("publishPluginMavenPublicationToMavenLocal")
     dependsOn("publishDeployerPluginMarkerMavenPublicationToMavenLocal")
 } */
-
-tasks.get("printProjectComponents").doLast {
-
-}
