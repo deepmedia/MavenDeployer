@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.10.1-rc11"
+    id("io.deepmedia.tools.deployer") version "0.11.0-rc01"
 }
 
 dependencies {
@@ -46,7 +46,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.11.0-rc1" // on change, update both docs and README
+version = "0.11.0" // on change, update both docs and README
 
 deployer {
     verbose = true
