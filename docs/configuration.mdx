@@ -12,7 +12,7 @@ a publication. Under the hood, these will be applied to the publication's POM fi
 Use the `projectInfo` property or configuration block:
 
 ```kotlin
-// Inside a spec...
+// In the deployer{} block, or within a spec declaration...
 projectInfo {
    // Project name. Defaults to rootProject.name
    name.set("MavenDeployer")
@@ -44,7 +44,7 @@ projectInfo {
 Use the `release` property or configuration block:
 
 ```kotlin
-// Inside a spec...
+// In the deployer{} block, or within a spec declaration...
 release {
    // Release version. Defaults to project.version, or AGP configured version for Android projects
    release.version.set("1.0.0")
@@ -60,7 +60,7 @@ release {
 Use the `signing` property or configuration block:
 
 ```kotlin
-// Inside a spec...
+// In the deployer{} block, or within a spec declaration...
 signing {
    key.set(secret("SIGNING_KEY"))
    password.set(secret("SIGNING_PASSWORD"))

@@ -17,10 +17,10 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
 
     private val objects = target.objects
 
-    @Deprecated("DeployerExtension now *is* the default spec.", replaceWith = ReplaceWith("this"))
+    @Deprecated("DeployerExtension now *is* the default spec. Simply use `this`.")
     val defaultSpec get() = this
 
-    @Deprecated("DeployerExtension now *is* the default spec.", replaceWith = ReplaceWith("this.apply { }"))
+    @Deprecated("DeployerExtension now *is* the default spec. Simply use `this`.")
     fun defaultSpec(action: Action<DeploySpec>) {
         action.execute(defaultSpec)
     }

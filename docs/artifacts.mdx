@@ -4,58 +4,116 @@ title: Spec artifacts
 
 # Spec artifacts
 
-The contents of a deploy spec (e.g. AARs, JARs, additional artifacts like sources or javadocs) can be configured at `spec.content`.
+The contents of a deploy spec (e.g. AARs, JARs, additional artifacts like sources or javadocs) can be configured in the `content {}` block.
 Each spec can support multiple components, each one corresponding to a maven publication and pom file.
 
-## Component inference
+## Built-in components
 
-By default, the plugin will try to infer the spec components based on the project structure and plugins. We currently
-support the following use cases:
+Inside the `content {}`, a few utilities are available so that:
+- You give the deployer some hints about the kind of project that you are working on
+- The deployer infers a list of components that you will want to export
 
-1. Kotlin Multiplatform projects: enabled when the Kotlin Multiplatform plugin is applied.
-   The deploy spec will have one component per target, plus one component publishing the 'common' metadata.
-2. Android libraries: enabled when `com.android.library` plugin is applied.
-   The deploy spec will have a single component based on the release AAR.
-3. Gradle Plugins: enabled when `java-gradle-plugin` plugin is applied and `gradlePlugin.isAutomatedPublishing` is true.
-   The deploy spec will have one component for the project, and one gradle marker component for each plugin in `gradlePlugin.plugins`.
-4. Java projects: enabled when the java base plugin is applied.
-   The deploy spec will have a single component from the `java` software component.
+##### Kotlin Multiplatform projects
+
+Use `content.kotlinComponents()`. The spec will export:
+- One component for Kotlin Metadata (the `common` target)
+- One component per declared target
+- For Android targets, one component per exported variant
+
+```kotlin
+content {
+    kotlinComponents {
+        // Optional configuration, invoked on each component.
+    }
+}
+```
+
+##### Kotlin regular projects
+
+Again, use `content.kotlinComponents()`. The spec will export:
+- if target is Android, one component per configured variant
+- in all other cases (JS, JVM, ...), one component only
+
+```kotlin
+content {
+    kotlinComponents {
+        // Optional configuration, invoked on the component.
+    }
+}
+```
+
+##### Gradle Plugin projects
+
+For projects providing gradle plugins, it is expected that the `java-gradle-plugin` is applied
+and that you declare some plugins through the official `gradlePlugin { }` block. It is also expected that
+automated publishing is enabled:
+
+```kotlin
+plugins {
+    `java-gradle-plugin`
+}
+
+gradlePlugin {
+    isAutomatedPublishing = true
+    plugins {
+        create("myplugin") {
+            id = "com.my.package.myplugin"
+            implementationClass = "com.my.package.subpackage.MyPlugin"
+        }
+    }
+}
+```
+
+> All of the above are Gradle APIs, not deployer's.
+
+Then, you can use `content.gradlePluginComponents()` for the deployer spec to collect this data and export it.
+The spec will be configured to have one component for the project, and one gradle marker component for each plugin in `gradlePlugin.plugins`.
+To understand about plugin markers and `java-gradle-plugin`, please check out Gradle documentation.
+
+```kotlin
+content {
+    gradlePluginComponents {
+        // Optional configuration, invoked on the component.
+    }
+}
+```
 
 ## Custom components
 
-To declare custom components, simply add them to `spec.content`. Multiple types of components are supported:
+To declare custom components, simply add them, one by one, with `content.component { ... }`. Multiple types of components are supported:
 
 - Based on an existing Gradle [SoftwareComponent](https://docs.gradle.org/current/javadoc/org/gradle/api/component/SoftwareComponent.html)
 - Based on an existing Gradle [MavenPublication](https://docs.gradle.org/current/dsl/org.gradle.api.publish.maven.MavenPublication.html)
 - Based on an existing Gradle `PluginDeclaration`
-- Based on an existing `KotlinTarget`
+- Based on an existing `KotlinTarget` (except Android targets, which may map to multiple components)
 - A custom list of artifacts
 
 ```kotlin
 deployer {
-    defaultSpec {
-        content {
-            component {
-                fromSoftwareComponent("softwareComponentName")
-            }
-            component {
-                fromSoftwareComponent(mySoftwareComponentInstance)
-            }
-            component {
-                // cloning the publication makes sure that it can be shared across multiple specs.
-                fromMavenPublication("mavenPublicationName", clone = false)
-            }
-            component {
-                fromKotlinTarget(myKotlinTarget)
-            }
-            component {
-                fromGradlePluginDeclaration(myGradlePlugin)
-            }
-            component {
-                fromArtifactSet {
-                    artifact(myArtifact, builtBy = myArtifactTask)
-                    artifact(myArtifact, classifier = "data", extension = "zip", builtBy = myArtifactTask)
-                }
+    content {
+        component {
+            fromSoftwareComponent("softwareComponentName")
+        }
+        component {
+            fromSoftwareComponent(mySoftwareComponentInstance)
+        }
+        component {
+            // cloning the publication makes sure that it can be shared across multiple specs.
+            fromMavenPublication("mavenPublicationName", clone = false)
+        }
+        component {
+            fromKotlinTarget(myKotlinTarget)
+        }
+        component {
+            fromGradlePluginDeclaration(myGradlePlugin)
+        }
+        component {
+            fromJava() // shorthand for fromSoftwareComponent("java")
+        }
+        component {
+            fromArtifactSet {
+                artifact(myArtifact, builtBy = myArtifactTask)
+                artifact(myArtifact, classifier = "data", extension = "zip", builtBy = myArtifactTask)
             }
         }
     }
@@ -71,8 +129,9 @@ It is possible however to add more files to the publication:
 - javadocs: use `component.docs(myJavadocTask)`
 - other artifacts: use `component.extras.artifact(...)`
 
-You can also leverage automatic sources and/or docs depending on your project. Use:
+You can also leverage sources and docs utilities. Use:
 
-- `content.emptySources()` or `content.emptyDocs()` to create an empty JAR. Might be useful for some repositories that require these jars to be present.
-- `content.autoSources()` to add a sources JAR, configured based on your project
-- `content.autoDocs()` to add a documentation JAR, for Kotlin projects only (uses Dokka under the hood)
+- `content.emptyDocs()` to create an empty docs JAR. Useful for repositories that require this artifact to exist.
+- `content.emptySources()` to create an empty sources JAR. Useful for repositories that require this artifact to exist.
+- `content.kotlinSources()` to add a Kotlin-based sources JAR. Note that this is not needed for KMP, where sources are automatically exported by the Kotlin Gradle Plugin.
+- `content.javaSources()` to add a Java-based sources JAR.

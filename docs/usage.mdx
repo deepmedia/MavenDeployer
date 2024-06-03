@@ -7,14 +7,43 @@ title: Usage and tasks
 ## Usage
 
 Plugin configuration happens through the `deployer` extension. You act on it by adding one or more `DeploySpec`s
-and configuring them. In addition, the `defaultSpec` can be used to configure default values that will be propagated
-to all other specs.
+and configuring them. Every spec can be configured independently and offers many options:
+
+```kotlin
+interface DeploySpec {
+    val content: Content
+    val auth: Auth
+    val projectInfo: ProjectInfo
+    val release: Release
+    val signing: Signing
+}
+```
+
+For example, to create a spec that deploys to GitHub and configure the version number, you may do:
 
 ```kotlin
 deployer {
-    defaultSpec {
-        release.version.set("1.0.0")
+    githubSpec {
+        release.version = "1.0.0"
+        ...
     }
+}
+```
+
+Please check out the [artifacts](artifacts) and [configuration](configuration) docs to learn how to configure specs properly.
+
+## Default spec
+
+In most cases, instead of configuring each spec separately, you will configure what we call the **default spec**.
+The default spec is the deployer extension itself, and acts as a root configuration provider.
+
+Its values will be propagated to all child specs and used as fallbacks in case the child is not configured.
+For example:
+
+```kotlin
+deployer {
+    release.version = "1.0.0" // our default
+    ...
 
     sonatypeSpec {
         // release.version is 1.0.0
@@ -22,7 +51,8 @@ deployer {
     }
 
     sonatypeSpec("snapshot") {
-        release.version.set("1.0.0-SNAPSHOT") // override default value
+        // snapshot publishing. Override the default version
+        release.version = "1.0.0-SNAPSHOT"
         ...
     }
 }
