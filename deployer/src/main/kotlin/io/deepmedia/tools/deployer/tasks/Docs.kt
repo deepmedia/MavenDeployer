@@ -30,10 +30,13 @@ internal val MavenArtifact.isDocsJar get() = classifier == "javadoc" && extensio
  *
  * For this reason, we copy jars into separate folders.
  */
-internal fun Project.makeDocsJar(spec: DeploySpec, component: Component, empty: Boolean): Artifacts.Entry {
+internal fun Project.makeDocsJar(
+    spec: DeploySpec,
+    component: Component,
+    task: TaskProvider<Jar>
+): Artifacts.Entry {
     val publications = extensions.getByType(PublishingExtension::class.java).publications
     val publication = component.maybeCreatePublication(publications, spec).name
-    val sourceTask = if (empty) makeEmptyDocsJar else makeAutoDocsJar
     val targetDir = layout.buildDirectory.dir("deploy").get().dir("docs").dir(publication)
     val targetName = "${spec.projectInfo.resolvedArtifactId(component).get()}-${spec.release.resolvedVersion.get()}-javadoc.jar"
     return Artifacts.Entry(
@@ -41,18 +44,18 @@ internal fun Project.makeDocsJar(spec: DeploySpec, component: Component, empty: 
         extension = "jar",
         classifier = "javadoc",
         builtBy = tasks.maybeRegister<Copy>("makeDocsJarFor${publication.capitalize()}") {
-            from(sourceTask)
+            from(task)
             into(targetDir)
-            rename { it.replace(sourceTask.get().archiveFileName.get(), targetName) }
+            rename { it.replace(task.get().archiveFileName.get(), targetName) }
         }
     )
 }
 
-private val Project.makeEmptyDocsJar get() = tasks.maybeRegister<Jar>("makeEmptyDocsJar") {
+internal val Project.makeEmptyDocsJar get() = tasks.maybeRegister<Jar>("makeEmptyDocsJar") {
     archiveClassifier.set("javadoc")
 }
 
-private val Project.makeAutoDocsJar: TaskProvider<Jar> get() {
+/* private val Project.makeAutoDocsJar: TaskProvider<Jar> get() {
     // if (component.isMarker.get()) return null // markers shouldn't have any jars
     if (!isKotlinProject) return makeEmptyDocsJar
     plugins.apply(DokkaPlugin::class)
@@ -62,4 +65,4 @@ private val Project.makeAutoDocsJar: TaskProvider<Jar> get() {
         from(dokkaHtml.flatMap { it.outputDirectory })
         archiveClassifier.set("javadoc")
     }
-}
+} */

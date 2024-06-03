@@ -49,13 +49,13 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         return true
     }
 
-    override fun provideDefaultDocsForComponent(target: Project, component: Component): Any {
+    /*override fun provideDefaultDocsForComponent(target: Project, component: Component): Any {
         return target.makeDocsJar(this, component, empty = true) // required by sonatype
     }
 
     override fun provideDefaultSourcesForComponent(target: Project, component: Component): Any? {
         return target.makeSourcesJar(this, component, empty = true) // required by sonatype
-    }
+    }*/
 
     override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) {
         super.validateMavenArtifacts(target, artifacts, log)

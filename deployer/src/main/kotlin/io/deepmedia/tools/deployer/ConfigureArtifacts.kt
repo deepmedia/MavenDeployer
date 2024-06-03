@@ -15,11 +15,15 @@ import org.gradle.kotlin.dsl.get
 
 private fun MavenPublication.addArtifacts(log: Logger, artifacts: Artifacts) {
     artifacts.entries.configureEach {
-        log { "configureArtifacts: adding ${this.artifact} to MavenPublication ${name}" }
-        val res = artifact(artifact)
-        if (builtBy != null) {
-            res.builtBy(builtBy)
-        }
+        log { "configureArtifacts: adding $artifact to MavenPublication $name" }
+        addArtifact(this)
+    }
+}
+
+private fun MavenPublication.addArtifact(artifact: Artifacts.Entry) {
+    val res = artifact(artifact.artifact)
+    if (artifact.builtBy != null) {
+        res.builtBy(artifact.builtBy)
     }
 }
 
@@ -60,27 +64,24 @@ internal fun Project.configureArtifacts(
         }
     }
 
-    maven.addArtifacts(log, component.extras)
-
     // TODO: The two operations down here required getArtifacts() which is a very problematic API
     //  because it marks the DefaultMavenPublication as "populated" irreversibly
     //  Removed the check, try to find another way to solve duplications, otherwise publishing can fail
+    // if (maven.artifacts.none { it.isSourcesJar }) { ... }
+    // if (maven.artifacts.none { it.isDocsJar }) { ... }
 
-    // if (maven.artifacts.none { it.isSourcesJar }) {
-        (component.sources.orNull ?: spec.provideDefaultSourcesForComponent(this, component))?.let {
-            log { "configureArtifacts: adding sources to MavenPublication ${maven.name}" }
-            if (it is Artifacts.Entry) maven.artifact(it.artifact).builtBy(it.builtBy)
-            else maven.artifact(it).builtBy(it)
-        }
-    // }
+    // Also had to stop using spec.provideDefault*ForComponent: we don't know if the inferred component already
+    // has (or will have...) that kind of artifact, so adding one automatically will lead to crashes.
 
-    // if (maven.artifacts.none { it.isDocsJar }) {
-        (component.docs.orNull ?: spec.provideDefaultDocsForComponent(this, component))?.let {
-            log { "configureArtifacts: adding docs to MavenPublication ${maven.name}" }
-            if (it is Artifacts.Entry) maven.artifact(it.artifact).builtBy(it.builtBy)
-            else maven.artifact(it).builtBy(it)
-        }
-    // }
+    component.resolveSources(this, spec)?.let {
+        log { "configureArtifacts: adding sources to MavenPublication ${maven.name}" }
+        maven.addArtifact(it)
+    }
+    component.resolveDocs(this, spec)?.let {
+        log { "configureArtifacts: adding docs to MavenPublication ${maven.name}" }
+        maven.addArtifact(it)
+    }
+    maven.addArtifacts(log, component.extras)
 }
 
 private fun Project.clonePublication(

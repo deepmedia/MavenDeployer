@@ -12,15 +12,11 @@ class DefaultDeploySpec internal constructor(project: Project) : DeploySpec {
     override val projectInfo: ProjectInfo = project.objects.newInstance()
     override val release: Release = project.objects.newInstance()
     override val signing: Signing = project.objects.newInstance()
-    fun auth(action: Action<Auth>) { action.execute(auth) }
-    fun content(action: Action<Content>) { action.execute(content) }
-    fun projectInfo(action: Action<ProjectInfo>) { action.execute(projectInfo) }
-    fun release(action: Action<Release>) { action.execute(release) }
-    fun signing(action: Action<Signing>) { action.execute(signing) }
 
-    init {
+
+    /* init {
         val inferredComponents = inferredComponents(project)
         inferredComponents.all { content.allComponents.add(this) }
         inferredComponents.whenObjectRemoved { content.allComponents.remove(this) }
-    }
+    } */
 }

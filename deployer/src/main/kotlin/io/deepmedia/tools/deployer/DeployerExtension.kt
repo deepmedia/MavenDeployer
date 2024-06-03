@@ -7,27 +7,40 @@ import io.deepmedia.tools.deployer.impl.SonatypeDeploySpec
 import io.deepmedia.tools.deployer.model.*
 import org.gradle.api.Action
 import org.gradle.api.PolymorphicDomainObjectContainer
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.polymorphicDomainObjectContainer
 import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 
-open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) : SecretScope {
+open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) : SecretScope, DeploySpec by DefaultDeploySpec(target) {
 
     val verbose = target.objects.property<Boolean>().convention(false)
 
     private val objects = target.objects
 
-    val defaultSpec = DefaultDeploySpec(target)
+    @Deprecated("DeployerExtension now *is* the default spec.", replaceWith = ReplaceWith("this"))
+    val defaultSpec get() = this
 
-    fun defaultSpec(action: Action<DefaultDeploySpec>) {
+    @Deprecated("DeployerExtension now *is* the default spec.", replaceWith = ReplaceWith("this.apply { }"))
+    fun defaultSpec(action: Action<DeploySpec>) {
         action.execute(defaultSpec)
     }
 
+    init {
+        target.whenEvaluated {
+            resolve(target)
+        }
+    }
+
+    fun auth(action: Action<Auth>) { action.execute(auth) }
+    fun content(action: Action<Content>) { action.execute(content) }
+    fun projectInfo(action: Action<ProjectInfo>) { action.execute(projectInfo) }
+    fun release(action: Action<Release>) { action.execute(release) }
+    fun signing(action: Action<Signing>) { action.execute(signing) }
+
     val specs: PolymorphicDomainObjectContainer<DeploySpec> = objects.polymorphicDomainObjectContainer(DeploySpec::class).apply {
-        registerFactory(LocalDeploySpec::class.java) { LocalDeploySpec(objects, it).apply { fallback(defaultSpec) } }
-        registerFactory(GithubDeploySpec::class.java) { GithubDeploySpec(objects, it).apply { fallback(defaultSpec) } }
-        registerFactory(SonatypeDeploySpec::class.java) { SonatypeDeploySpec(objects, it).apply { fallback(defaultSpec) } }
+        registerFactory(LocalDeploySpec::class.java) { LocalDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
+        registerFactory(GithubDeploySpec::class.java) { GithubDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
+        registerFactory(SonatypeDeploySpec::class.java) { SonatypeDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
     }
 
     private fun specName(current: String, default: String): String {

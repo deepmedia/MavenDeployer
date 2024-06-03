@@ -1,10 +1,10 @@
 package io.deepmedia.tools.deployer.model
 
-import io.deepmedia.tools.deployer.*
-import io.deepmedia.tools.deployer.isAndroidLibraryProject
-import io.deepmedia.tools.deployer.isGradlePluginProject
-import io.deepmedia.tools.deployer.isKmpProject
-import io.deepmedia.tools.deployer.isKotlinProject
+import io.deepmedia.tools.deployer.tasks.*
+import io.deepmedia.tools.deployer.tasks.makeDocsJar
+import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
+import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
+import io.deepmedia.tools.deployer.tasks.makeSourcesJar
 import org.gradle.api.*
 import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.model.ObjectFactory
@@ -12,17 +12,16 @@ import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
-import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.plugin.devel.PluginDeclaration
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
-import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinOnlyTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.w3c.dom.Element
 import javax.inject.Inject
 
@@ -70,8 +69,8 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
 
     val tag: Any? get() = origin.orNull?.tag
 
-    var inferred: Boolean = false
-        internal set
+    // var inferred: Boolean = false
+    //     internal set
 
     val packaging: Property<String> = objects.property()
 
@@ -83,6 +82,10 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
                 if (this.name == name) block()
             }
         }
+    }
+
+    fun fromJava() {
+        fromSoftwareComponent("java")
     }
 
     fun fromSoftwareComponent(name: String, tag: Any? = null) {
@@ -110,36 +113,29 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
      *   - there might be no components, if [KotlinMultiplatformExtension.androidTarget] was not configured
      *   - there might be more than one component
      *   - [KotlinTarget.components] *must* be called in a afterEvaluate block, after AGP's afterEvaluates
+     *
+     * Using [KotlinOnlyTarget] so that [KotlinAndroidTarget] is automatically excluded.
      */
-    fun fromKotlinTarget(target: KotlinTarget) {
-        if (target.platformType == KotlinPlatformType.common) {
+    fun fromKotlinTarget(target: KotlinOnlyTarget<*>) {
+        if (target is KotlinMetadataTarget) {
             fromMavenPublication("kotlinMultiplatform", clone = true, tag = target)
-            // for metadata publication, mavenPublication is not called. But luckily when it is added it
+            // for metadata publication, target.mavenPublication is not called. But luckily when it is added it
             // already has the component so no extra configureWhen is needed here. See:
             // https://youtrack.jetbrains.com/issue/KT-53300
-        } else if (target.platformType == KotlinPlatformType.androidJvm) {
-            error("fromKotlinTarget can't be used with Android targets. Use fromSoftwareComponent instead.")
         } else {
-            val softwareComponent = target.components.singleOrNull()
-            softwareComponent ?: error("$target has more/less than 1 component: ${target.components}")
-            fromSoftwareComponent(softwareComponent, target)
-            if (target.project.isKmpProject) {
-                artifactId.set { "$it-${target.name.lowercase()}" }
-            }
-
-            // OLD, PUBLICATION BASED IMPL
-            // fromMavenPublication(target.name, clone = clone, tag = target)
-            // https://github.com/JetBrains/kotlin/blob/v1.7.0/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/plugin/mpp/Publishing.kt#L83
-            // Need to configure not only when the publication is created, but also after it is configured
-            // with a software component, which in Kotlin Gradle Plugin happens in afterEvaluate after
-            // dispatching the mavenPublication blocks. If we don't take care of this detail, publications
-            // can fail and/or not include gradle module metadata.
-            /* configureWhen { block ->
-                target.mavenPublication {
-                    afterEvaluate { block() }
-                }
-            } */
+            fromNonAndroidNonMetadataKotlinTarget(target)
         }
+    }
+
+    fun fromKotlinTarget(target: KotlinWithJavaTarget<*, *>) {
+        fromNonAndroidNonMetadataKotlinTarget(target)
+    }
+
+    private fun fromNonAndroidNonMetadataKotlinTarget(target: KotlinTarget) {
+        val softwareComponents = target.components
+        val softwareComponent = softwareComponents.singleOrNull()
+        softwareComponent ?: error("$target has more/less than 1 component: ${softwareComponents}")
+        fromSoftwareComponent(softwareComponent, target)
     }
 
     /**
@@ -159,6 +155,11 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         fromMavenPublication("${declaration.name}PluginMarkerMaven", clone = clone, tag = declaration)
         groupId.set { declaration.id }
         artifactId.set { declaration.id + ".gradle.plugin" }
+
+        // Markers have no sources/docs. Add empty jars to ease sonatype publishing.
+        emptyDocs()
+        emptySources()
+
         if (mainComponent != null) {
             xml = { xml, spec, publications ->
                 val mainPublication = mainComponent.maybeCreatePublication(publications, spec)
@@ -187,10 +188,29 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         configureWhen { block -> block() }
     }
 
-    internal val sources: Property<Any> = objects.property()
-    internal val docs: Property<Any> = objects.property()
-    fun sources(task: Any?) { sources.set(task) }
-    fun docs(task: Any?) { docs.set(task) }
+    private val sources: Property<Artifacts.Entry> = objects.property()
+    private val docs: Property<Artifacts.Entry> = objects.property()
+    fun sources(task: Any?) { sources.set(task?.let { Artifacts.Entry(it, it) }) }
+    fun docs(task: Any?) { docs.set(task?.let { Artifacts.Entry(it, it) }) }
+
+    private val fallbackSources: Property<Project.() -> TaskProvider<Jar>> = objects.property()
+    private val fallbackDocs: Property<Project.() -> TaskProvider<Jar>> = objects.property()
+
+    fun emptySources() { fallbackSources.set { makeEmptySourcesJar } }
+    fun kotlinSources() { fallbackSources.set { makeKotlinSourcesJar } }
+    fun javaSources() { fallbackSources.set { makeJavaSourcesJar } }
+
+    fun emptyDocs() { fallbackDocs.set { makeEmptyDocsJar } }
+
+    internal fun resolveSources(project: Project, spec: DeploySpec): Artifacts.Entry? {
+        val fallback = fallbackSources.map { project.makeSourcesJar(spec, this, project.it()) }
+        return sources.orElse(fallback).orNull
+    }
+
+    internal fun resolveDocs(project: Project, spec: DeploySpec): Artifacts.Entry? {
+        val fallback = fallbackDocs.map { project.makeDocsJar(spec, this, project.it()) }
+        return docs.orElse(fallback).orNull
+    }
 
     val extras: Artifacts = objects.newInstance()
 
@@ -214,7 +234,7 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
     }
 
     private lateinit var configureWhenBlock: Project.(configurationBlock: () -> Unit) -> Unit
-    internal fun configureWhen(block: Project.(configurationBlock: () -> Unit) -> Unit) {
+    private fun configureWhen(block: Project.(configurationBlock: () -> Unit) -> Unit) {
         configureWhenBlock = block
     }
 
@@ -223,87 +243,6 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
 
 @Suppress("unused")
 interface ComponentScope {
-    fun component(action: Action<Component>)
+    fun component(action: Action<Component>): Component
 }
 
-internal fun inferredComponents(project: Project): DomainObjectSet<Component> {
-    val set = project.objects.domainObjectSet(Component::class)
-
-    fun inferredComponent(configure: Component.() -> Unit): Component {
-        val comp: Component = project.objects.newInstance()
-        comp.configure()
-        comp.inferred = true
-        set.add(comp)
-        return comp
-    }
-
-    // Wait for evaluation so that we can be sure of the presence of other plugins.
-    // We need to know which plugins are present and which aren't to make the best decision.
-    project.whenEvaluated {
-        when {
-            // KMP:
-            // Kotlin multiplatform projects have one artifact per target, plus one for metadata
-            // which is also exposed as a target with common platform.
-            project.isKmpProject -> {
-                val kotlin = project.kotlinExtension as KotlinMultiplatformExtension
-                kotlin.targets.all {
-                    val target = this
-                    if (target.platformType != KotlinPlatformType.androidJvm) {
-                        inferredComponent { fromKotlinTarget(this@all) }
-                    } else {
-                        // Android's KotlinTarget.components must be called in afterEvaluate,
-                        // possibly nested so we jump after AGP's afterEvaluate blocks.
-                        // There may be 0, 1 or more components depending on how KotlinAndroidTarget was configured.
-                        // NOTE: if multiple components are present, they will have the same artifactId.
-                        project.whenEvaluated {
-                            target.components.forEach {
-                                inferredComponent {
-                                    fromSoftwareComponent(it, tag = this@all)
-                                    artifactId.set { "$it-${target.name.lowercase()}" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // GRADLE PLUGINS:
-            // When java-gradle-plugin is applied and isAutomatedPublishing is true, X+1 publications
-            // are created. First is "pluginMaven" with the artifact, and the rest are plugin markers
-            // called "<PLUGIN_NAME>PluginMarkerMaven". Markers have no jar, just pom file with single dep.
-            // We use xml action to rewrite the dependency in the markers, because the main component coordinates
-            // might be overridden by the user while Gradle refers to the original pluginMaven publication which we clone.
-            // See MavenPluginPublishPlugin.java::createMavenMarkerPublication()
-            project.isGradlePluginProject -> run {
-                val gradlePlugin = project.extensions.getByType<GradlePluginDevelopmentExtension>()
-                if (!gradlePlugin.isAutomatedPublishing) return@run
-                val mainComponent = inferredComponent {
-                    fromMavenPublication("pluginMaven", clone = true)
-                    packaging.set("jar")
-                }
-                gradlePlugin.plugins.all {
-                    inferredComponent {
-                        fromGradlePluginDeclaration(this@all, mainComponent, clone = true)
-                    }
-                }
-            }
-
-            // TODO: starting from AGP 7.1.0, user must explicitly decide which components will be created in the
-            //  publishing DSL block. He will pick variants (or choose a custom component name) and a software component
-            //  with that name will be created. But there doesn't seem to be any way of reading variants from AGP plugin
-            // https://android.googlesource.com/platform/tools/base/+/refs/heads/mirror-goog-studio-main/build-system/gradle-api/src/main/java/com/android/build/api/dsl/LibraryPublishing.kt
-            project.isAndroidLibraryProject -> inferredComponent {
-                fromSoftwareComponent("release")
-                packaging.set("aar")
-            }
-
-            project.isKotlinProject -> {
-                val kotlin = project.kotlinExtension as KotlinSingleTargetExtension<*>
-                inferredComponent { fromKotlinTarget(kotlin.target) }
-            }
-
-            project.isJavaProject -> inferredComponent { fromSoftwareComponent("java") }
-        }
-    }
-    return set
-}

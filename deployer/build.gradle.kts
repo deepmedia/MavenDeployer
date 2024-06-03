@@ -1,19 +1,21 @@
+@file:Suppress("UnstableApiUsage")
+
 import io.deepmedia.tools.deployer.impl.SonatypeAuth
 import io.deepmedia.tools.deployer.model.DeploySpec
 import io.deepmedia.tools.deployer.model.Secret
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinOnlyTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.10.0-rc2"
+    id("io.deepmedia.tools.deployer") version "0.10.1-rc11"
 }
 
 dependencies {
     compileOnly("com.android.tools.build:gradle:8.0.2")
-    // compileOnly("com.android.tools.build:gradle:7.2.2")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
-    // api("org.jetbrains.dokka:dokka-gradle-plugin:1.7.10")
     api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
 }
 
@@ -44,60 +46,56 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.10.0" // on change, update both docs and README
+version = "0.10.1-rc12" // on change, update both docs and README
 
 deployer {
-    verbose.set(true)
+    verbose = true
 
-    defaultSpec {
-        projectInfo {
-            description.set("A lightweight, handy tool for publishing maven / Gradle packages to different kinds of repositories.")
-            url.set("https://github.com/deepmedia/MavenDeployer")
-            scm.fromGithub("deepmedia", "MavenDeployer")
-            license(apache2)
-            developer("natario1", "mattia@deepmedia.io", "DeepMedia", "https://deepmedia.io")
+    content {
+        gradlePluginComponents {
+            kotlinSources()
+            emptyDocs()
         }
-        content.autoDocs()
-        content.autoSources()
+    }
+    projectInfo {
+        description = "A lightweight, handy tool for publishing maven / Gradle packages to different kinds of repositories."
+        url = "https://github.com/deepmedia/MavenDeployer"
+        scm.fromGithub("deepmedia", "MavenDeployer")
+        license(apache2)
+        developer("natario1", "mattia@deepmedia.io", "DeepMedia", "https://deepmedia.io")
+    }
 
-        signing {
-            key.set(secret("SIGNING_KEY"))
-            password.set(secret("SIGNING_PASSWORD"))
-        }
+    signing {
+        key = secret("SIGNING_KEY")
+        password = secret("SIGNING_PASSWORD")
     }
 
     // use "deployLocal" to deploy to local maven repository
-    localSpec()
-
-    val sonatypeAuth: SonatypeAuth.() -> Unit = {
-        user.set(secret("SONATYPE_USER"))
-        password.set(secret("SONATYPE_PASSWORD"))
+    localSpec {
+        // directory.set(layout.buildDirectory.get().dir("inspect"))
     }
 
     // use "deploySonatype" to deploy to OSSRH / maven central
     sonatypeSpec {
-        auth.sonatypeAuth()
+        auth.user = secret("SONATYPE_USER")
+        auth.password = secret("SONATYPE_PASSWORD")
     }
 
     // use "deploySonatypeSnapshot" to deploy to sonatype snapshots repo
     sonatypeSpec("snapshot") {
-        auth.sonatypeAuth()
-        repositoryUrl.set(ossrhSnapshots1)
-        release.version.set("latest-SNAPSHOT")
+        auth.user = secret("SONATYPE_USER")
+        auth.password = secret("SONATYPE_PASSWORD")
+        repositoryUrl = ossrhSnapshots1
+        release.version = "latest-SNAPSHOT"
     }
 
     // use "deployGithub" to deploy to github packages
     githubSpec {
-        repository.set("MavenDeployer")
-        owner.set("deepmedia")
+        repository = "MavenDeployer"
+        owner = "deepmedia"
         auth {
-            user.set(secret("GHUB_USER"))
-            token.set(secret("GHUB_PERSONAL_ACCESS_TOKEN"))
+            user = secret("GHUB_USER")
+            token = secret("GHUB_PERSONAL_ACCESS_TOKEN")
         }
     }
 }
-
-/* val deployLegacy by tasks.registering {
-    dependsOn("publishPluginMavenPublicationToMavenLocal")
-    dependsOn("publishDeployerPluginMarkerMavenPublicationToMavenLocal")
-} */

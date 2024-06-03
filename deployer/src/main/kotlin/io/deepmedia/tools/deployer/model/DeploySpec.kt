@@ -20,6 +20,14 @@ interface DeploySpec : Named {
     val signing: Signing
 }
 
+internal fun DeploySpec.resolve(target: Project) {
+    auth.resolve(target, this)
+    projectInfo.resolve(target, this)
+    release.resolve(target, this)
+    signing.resolve(target, this)
+    content.resolve(target, this)
+}
+
 abstract class AbstractDeploySpec<A: Auth> constructor(
     objects: ObjectFactory,
     private val name: String,
@@ -30,6 +38,7 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
     final override val projectInfo: ProjectInfo = objects.newInstance()
     final override val release: Release = objects.newInstance()
     final override val signing: Signing = objects.newInstance()
+
     fun auth(action: Action<A>) { action.execute(auth) }
     fun content(action: Action<Content>) { action.execute(content) }
     fun projectInfo(action: Action<ProjectInfo>) { action.execute(projectInfo) }
@@ -46,14 +55,6 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.fallback(to.signing)
     }
 
-    internal fun resolve(target: Project) {
-        auth.resolve(target, this)
-        projectInfo.resolve(target, this)
-        release.resolve(target, this)
-        signing.resolve(target, this)
-        content.resolve(target, this)
-    }
-
     internal open fun hasSigning(target: Project): Boolean {
         val hasKey = signing.key.isPresent && runCatching { signing.key.get().resolve(target, "") }.isSuccess
         val hasPwd = signing.password.isPresent && runCatching { signing.password.get().resolve(target, "") }.isSuccess
@@ -68,7 +69,6 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
 
     internal open fun validateMavenPom(pom: MavenPom) = Unit
 
-    internal open fun provideDefaultSourcesForComponent(target: Project, component: Component): Any? = null
-
-    internal open fun provideDefaultDocsForComponent(target: Project, component: Component): Any? = null
+    // internal open fun provideDefaultSourcesForComponent(target: Project, component: Component): Any? = null
+    // internal open fun provideDefaultDocsForComponent(target: Project, component: Component): Any? = null
 }
