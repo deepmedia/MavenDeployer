@@ -36,6 +36,7 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 
     private val maySyncToMavenCentral = repositoryUrl.map { it == ossrh || it == ossrh1 }
 
+
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val repo = repositoryUrl.get()
         return repositories.maven(repo) {
@@ -66,12 +67,14 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 
     override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) {
         super.validateMavenArtifacts(target, artifacts, log)
-        fun err(type: String): String {
-            return "Sonatype requires a $type jar artifact. Please add it to your component; you may use utilities like emptyDocs() and emptySources(). " +
-                    "Available artifacts: " + artifacts.dump()
+        if (maySyncToMavenCentral.get()) {
+            fun err(type: String): String {
+                return "Sonatype requires a $type jar artifact. Please add it to your component; you may use utilities like emptyDocs() and emptySources(). " +
+                        "Available artifacts: " + artifacts.dump()
+            }
+            require(artifacts.any { it.isSourcesJar }) { err("sources") }
+            require(artifacts.any { it.isDocsJar }) { err("javadoc") }
         }
-        require(artifacts.any { it.isSourcesJar }) { err("sources") }
-        require(artifacts.any { it.isDocsJar }) { err("javadoc") }
 
         // It's not possible to use the approach below given when this function is called (inside the task)
         // because it would add a task dependency that will not be respected, because it's too late
@@ -98,18 +101,20 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
     // https://central.sonatype.org/pages/requirements.html
     override fun validateMavenPom(pom: MavenPom) {
         super.validateMavenPom(pom)
-        require(pom.url.isPresent) {
-            "Sonatype POM requires a project url. Please add it to spec.projectInfo.url."
-        }
-        pom as MavenPomInternal
-        require(pom.licenses.isNotEmpty()) {
-            "Sonatype POM requires at least one license. Please add it to spec.projectInfo.licenses."
-        }
-        require(pom.developers.isNotEmpty()) {
-            "Sonatype POM requires at least one developer. Please add it to spec.projectInfo.developers."
-        }
-        require(pom.scm.connection.isPresent && pom.scm.developerConnection.isPresent && pom.scm.url.isPresent) {
-            "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm."
+        if (maySyncToMavenCentral.get()) {
+            require(pom.url.isPresent) {
+                "Sonatype POM requires a project url. Please add it to spec.projectInfo.url."
+            }
+            pom as MavenPomInternal
+            require(pom.licenses.isNotEmpty()) {
+                "Sonatype POM requires at least one license. Please add it to spec.projectInfo.licenses."
+            }
+            require(pom.developers.isNotEmpty()) {
+                "Sonatype POM requires at least one developer. Please add it to spec.projectInfo.developers."
+            }
+            require(pom.scm.connection.isPresent && pom.scm.developerConnection.isPresent && pom.scm.url.isPresent) {
+                "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm."
+            }
         }
     }
 
