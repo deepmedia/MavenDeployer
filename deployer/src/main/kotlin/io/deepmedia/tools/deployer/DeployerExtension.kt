@@ -1,9 +1,6 @@
 package io.deepmedia.tools.deployer
 
-import io.deepmedia.tools.deployer.impl.DefaultDeploySpec
-import io.deepmedia.tools.deployer.impl.GithubDeploySpec
-import io.deepmedia.tools.deployer.impl.LocalDeploySpec
-import io.deepmedia.tools.deployer.impl.SonatypeDeploySpec
+import io.deepmedia.tools.deployer.impl.*
 import io.deepmedia.tools.deployer.model.*
 import org.gradle.api.Action
 import org.gradle.api.PolymorphicDomainObjectContainer
@@ -53,6 +50,10 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
 
     fun sonatypeSpec(name: String = "sonatype", configure: Action<SonatypeDeploySpec> = Action {  }) {
         specs.register(specName(name, "sonatype"), SonatypeDeploySpec::class.java, configure)
+    }
+
+    fun nexusSpec(name: String = "nexus", configure: Action<NexusDeploySpec> = Action {  }) {
+        specs.register(specName(name, "nexus"), NexusDeploySpec::class.java, configure)
     }
 
     fun githubSpec(name: String = "github", configure: Action<GithubDeploySpec> = Action {  }) {

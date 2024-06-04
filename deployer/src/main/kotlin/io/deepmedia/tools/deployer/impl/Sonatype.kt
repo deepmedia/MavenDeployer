@@ -20,6 +20,9 @@ import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 import kotlin.math.abs
 
+typealias NexusDeploySpec = SonatypeDeploySpec
+typealias NexusAuth = SonatypeAuth
+
 class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<SonatypeAuth>(objects, name, SonatypeAuth::class) {
 
