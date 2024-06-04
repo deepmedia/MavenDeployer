@@ -18,11 +18,11 @@ internal fun Project.configureSigning(
     log: Logger
 ): Sign? {
     // Configure signing if present
-    if (spec.hasSigning(this)) {
+    val signInfo = spec.resolveSigning(this)
+    if (signInfo != null) {
         log { "configureSigning: signing MavenPublication ${maven.name}" }
         val ext = extensions.getByType(SigningExtension::class)
-        val key = spec.signing.key.get().resolve(this, "spec.signing.key")
-        val password = spec.signing.password.get().resolve(this, "spec.signing.password")
+        val (key, password) = signInfo
         ext.useInMemoryPgpKeys(key, password)
         try {
             return ext.sign(maven).single()

@@ -26,12 +26,17 @@ typealias NexusAuth = SonatypeAuth
 class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<SonatypeAuth>(objects, name, SonatypeAuth::class) {
 
+    // OSSRH: Nexus-powered repositories provided by Sonatype to OSS projects for
+    // - pushing artifacts to Maven Central (push to ossrh/ossrh1, followed by convoluted close/release/drop API calls)
+    // - hosting development builds (push to ssrhSnapshots/ossrhSnapshots1)
     @JvmField val ossrh = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
     @JvmField val ossrh1 = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
     @JvmField val ossrhSnapshots = "https://oss.sonatype.org/content/repositories/snapshots/"
     @JvmField val ossrhSnapshots1 = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 
-    val repositoryUrl: Property<String> = objects.property<String>().convention(ossrh1)
+    val repositoryUrl: Property<String> = objects.property<String>().convention(ossrh1).apply { finalizeValueOnRead() }
+
+    private val maySyncToMavenCentral = repositoryUrl.map { it == ossrh || it == ossrh1 }
 
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val repo = repositoryUrl.get()
@@ -45,11 +50,12 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         repository.credentials.password = auth.password.get().resolve(target, "spec.auth.password")
     }
 
-    override fun hasSigning(target: Project): Boolean {
-        require(super.hasSigning(target)) {
-            "Signing is mandatory for Sonatype deployments. Please add spec.signing.key and spec.signing.password."
+    override fun resolveSigning(target: Project): Pair<String, String>? {
+        val result = super.resolveSigning(target)
+        if (result == null && maySyncToMavenCentral.get()) {
+            error("Signing is mandatory for OSSRH/Maven Central deployments. Please add spec.signing.key and spec.signing.password.")
         }
-        return true
+        return result
     }
 
     /*override fun provideDefaultDocsForComponent(target: Project, component: Component): Any {

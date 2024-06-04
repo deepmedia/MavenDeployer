@@ -1,6 +1,7 @@
 package io.deepmedia.tools.deployer.model
 
 import io.deepmedia.tools.deployer.Logger
+import io.deepmedia.tools.deployer.configureSigning
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.Project
@@ -55,10 +56,11 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.fallback(to.signing)
     }
 
-    internal open fun hasSigning(target: Project): Boolean {
-        val hasKey = signing.key.isPresent && runCatching { signing.key.get().resolve(target, "") }.isSuccess
-        val hasPwd = signing.password.isPresent && runCatching { signing.password.get().resolve(target, "") }.isSuccess
-        return hasKey || hasPwd
+    internal open fun resolveSigning(target: Project): Pair<String, String>? {
+        if (!signing.key.isPresent && !signing.password.isPresent) return null
+        val key = signing.key.orNull?.resolve(target, "spec.signing.key") ?: error("Got signing password, but no key.")
+        val password = signing.password.orNull?.resolve(target, "spec.signing.password")  ?: error("Got signing key, but no password.")
+        return key to password
     }
 
     internal abstract fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository
