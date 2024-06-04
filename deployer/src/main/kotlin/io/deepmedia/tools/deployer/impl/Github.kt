@@ -23,7 +23,7 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
         val owner = owner.get()
         val repo = repository.orNull ?: target.rootProject.name
         return repositories.maven {
-            this.name = "$owner/$repo".hashCode().toString()
+            this.name = "$owner${repo.capitalize()}"
             this.url = target.uri("https://maven.pkg.github.com/$owner/$repo")
         }
     }

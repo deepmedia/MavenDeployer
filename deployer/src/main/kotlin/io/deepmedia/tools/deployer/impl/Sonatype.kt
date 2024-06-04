@@ -36,11 +36,16 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
 
     private val maySyncToMavenCentral = repositoryUrl.map { it == ossrh || it == ossrh1 }
 
-
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val repo = repositoryUrl.get()
         return repositories.maven(repo) {
-            this.name = abs(repo.hashCode()).toString()
+            this.name = when (repo) {
+                ossrh -> "ossrh"
+                ossrh1 -> "ossrh1"
+                ossrhSnapshots -> "ossrhSnapshots"
+                ossrhSnapshots1 -> "ossrhSnapshots1"
+                else -> abs(repo.hashCode()).toString()
+            }
         }
     }
 

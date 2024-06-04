@@ -17,8 +17,8 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
 
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         return if (directory.isPresent) {
-            val repo = abs(directory.get().asFile.absolutePath.hashCode()).toString()
-            repositories.maven(directory) { this.name = repo }
+            val hash = abs(directory.get().asFile.absolutePath.hashCode()).toString()
+            repositories.maven(directory) { this.name = hash }
         } else {
             repositories.mavenLocal()
         }
