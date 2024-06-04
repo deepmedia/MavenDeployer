@@ -23,13 +23,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 
 
-internal fun <T> Property<T>.fallback(value: T) {
-    convention(value)
-}
-
-internal fun <T> Property<T>.fallback(value: Provider<T>) {
-    convention(value)
-}
 
 private var _hasKotlinPluginClasspath: Boolean? = null
 
@@ -53,13 +46,12 @@ internal val Project.hasAndroidPluginClasspath: Boolean get() {
     return _hasAndroidPluginClasspath!!
 }
 
-internal val Project.isJavaProject get() = plugins.any { it is JavaBasePlugin }
-
-internal val Project.isGradlePluginProject get() = plugins.any { it is JavaGradlePluginPlugin }
+// internal val Project.isJavaProject get() = plugins.any { it is JavaBasePlugin }
+// internal val Project.isGradlePluginProject get() = plugins.any { it is JavaGradlePluginPlugin }
+// internal val Project.isKmpProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
 
 internal val Project.isAndroidLibraryProject get() = hasAndroidPluginClasspath && plugins.any { it is LibraryPlugin }
 
-internal val Project.isKmpProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinMultiplatformPluginWrapper }
 internal val Project.isKotlinProject get() = hasKotlinPluginClasspath && plugins.any { it is KotlinBasePluginWrapper }
 
 // internal fun Project.whenJavaPluginApplied(block: () -> Unit) = whenPluginApplied<JavaBasePlugin>(block)

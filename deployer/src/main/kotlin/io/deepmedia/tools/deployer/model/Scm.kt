@@ -1,6 +1,5 @@
 package io.deepmedia.tools.deployer.model
 
-import io.deepmedia.tools.deployer.fallback
 import org.gradle.api.Transformer
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -11,10 +10,10 @@ import javax.inject.Inject
 // https://central.sonatype.org/pages/requirements.html
 open class Scm @Inject constructor(objects: ObjectFactory) {
 
-    val url: Property<String> = objects.property()
+    val url: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
     internal lateinit var resolvedUrl: Provider<String>
-    val connection = objects.property<String?>()
-    val developerConnection = objects.property<String?>()
+    val connection = objects.property<String?>().apply { finalizeValueOnRead() }
+    val developerConnection = objects.property<String?>().apply { finalizeValueOnRead() }
 
     fun fromGithub(user: String, repository: String) {
         url.set("https://github.com/$user/$repository")
@@ -31,9 +30,9 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
     }
 
     internal fun fallback(to: Scm) {
-        url.fallback(to.url)
-        connection.fallback(to.connection)
-        developerConnection.fallback(to.developerConnection)
+        url.convention(to.url)
+        connection.convention(to.connection)
+        developerConnection.convention(to.developerConnection)
     }
 
     @Suppress("UNUSED_PARAMETER")

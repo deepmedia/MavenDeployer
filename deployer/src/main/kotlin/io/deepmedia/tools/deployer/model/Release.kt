@@ -1,7 +1,6 @@
 package io.deepmedia.tools.deployer.model
 
 import com.android.build.gradle.BaseExtension
-import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.isAndroidLibraryProject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -11,9 +10,9 @@ import javax.inject.Inject
 
 open class Release @Inject constructor(objects: ObjectFactory) {
 
-    val version: Property<String> = objects.property()
-    val tag: Property<String> = objects.property()
-    val description: Property<String> = objects.property()
+    val version: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
+    val tag: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
+    val description: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
 
     internal lateinit var resolvedVersion: Provider<String>
     internal lateinit var resolvedTag: Provider<String>
@@ -21,9 +20,9 @@ open class Release @Inject constructor(objects: ObjectFactory) {
     // internal lateinit var resolvedPackaging: Provider<String>
 
     internal fun fallback(to: Release) {
-        version.fallback(to.version)
-        tag.fallback(to.tag)
-        description.fallback(to.description)
+        version.convention(to.version)
+        tag.convention(to.tag)
+        description.convention(to.description)
         // packaging.fallback(to.packaging)
     }
 
@@ -45,11 +44,5 @@ open class Release @Inject constructor(objects: ObjectFactory) {
 
         resolvedTag = tag.orElse(resolvedVersion.map { "v$it" })
         resolvedDescription = description.orElse(tag.map { "${target.name} $it" })
-        /* resolvedPackaging = packaging.orElse(target.provider {
-            when {
-                target.isAndroidLibraryProject -> "aar"
-                else -> null
-            }
-        }) */
     }
 }

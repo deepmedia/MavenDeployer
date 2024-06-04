@@ -1,6 +1,5 @@
 package io.deepmedia.tools.deployer.impl
 
-import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
@@ -17,8 +16,8 @@ import javax.inject.Inject
 class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<GithubAuth>(objects, name, GithubAuth::class) {
 
-    val owner: Property<String> = objects.property()
-    val repository: Property<String> = objects.property()
+    val owner: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
+    val repository: Property<String> = objects.property<String>().apply { finalizeValueOnRead() }
 
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         val owner = owner.get()
@@ -37,23 +36,23 @@ class GithubDeploySpec internal constructor(objects: ObjectFactory, name: String
     override fun fallback(to: DeploySpec) {
         super.fallback(to)
         if (to is GithubDeploySpec) {
-            owner.fallback(to.owner)
-            repository.fallback(to.repository)
+            owner.convention(to.owner)
+            repository.convention(to.repository)
         }
     }
 }
 
 open class GithubAuth @Inject constructor(objects: ObjectFactory) : Auth() {
     /** GitHub username. */
-    val user: Property<Secret> = objects.property()
+    val user: Property<Secret> = objects.property<Secret>().apply { finalizeValueOnRead() }
 
     /** GitHub personal access token. */
-    val token: Property<Secret> = objects.property()
+    val token: Property<Secret> = objects.property<Secret>().apply { finalizeValueOnRead() }
 
     override fun fallback(to: Auth) {
         if (to is GithubAuth) {
-            user.fallback(to.user)
-            token.fallback(to.token)
+            user.convention(to.user)
+            token.convention(to.token)
         }
     }
 }

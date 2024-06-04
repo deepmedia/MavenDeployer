@@ -1,6 +1,5 @@
 package io.deepmedia.tools.deployer.impl
 
-import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
@@ -14,7 +13,7 @@ import kotlin.math.abs
 
 class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<Auth>(objects, name, Auth::class) {
-    val directory: DirectoryProperty = objects.directoryProperty()
+    val directory: DirectoryProperty = objects.directoryProperty().apply { finalizeValueOnRead() }
 
     override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         return if (directory.isPresent) {
@@ -32,7 +31,7 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
     override fun fallback(to: DeploySpec) {
         super.fallback(to)
         if (to is LocalDeploySpec) {
-            directory.fallback(to.directory)
+            directory.convention(to.directory)
         }
     }
 }

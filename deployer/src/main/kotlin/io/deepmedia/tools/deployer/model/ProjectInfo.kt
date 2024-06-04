@@ -1,6 +1,5 @@
 package io.deepmedia.tools.deployer.model
 
-import io.deepmedia.tools.deployer.fallback
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.BasePluginExtension
@@ -55,11 +54,11 @@ open class ProjectInfo @Inject constructor(private val objects: ObjectFactory) :
     }
 
     internal fun fallback(to: ProjectInfo) {
-        name.fallback(to.name)
-        description.fallback(to.description)
-        url.fallback(to.url)
-        groupId.fallback(to.groupId)
-        artifactId.fallback(to.artifactId)
+        name.convention(to.name)
+        description.convention(to.description)
+        url.convention(to.url)
+        groupId.convention(to.groupId)
+        artifactId.convention(to.artifactId)
         scm.fallback(to.scm)
         to.licenses.all { licenses.add(this) }
         to.licenses.whenObjectRemoved { licenses.remove(this) }

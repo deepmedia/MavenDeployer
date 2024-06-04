@@ -2,9 +2,7 @@ package io.deepmedia.tools.deployer.impl
 
 import io.deepmedia.tools.deployer.Logger
 import io.deepmedia.tools.deployer.dump
-import io.deepmedia.tools.deployer.fallback
 import io.deepmedia.tools.deployer.model.*
-import io.deepmedia.tools.deployer.tasks.*
 import io.deepmedia.tools.deployer.tasks.isDocsJar
 import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.Project
@@ -118,19 +116,19 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
     override fun fallback(to: DeploySpec) {
         super.fallback(to)
         if (to is SonatypeDeploySpec) {
-            repositoryUrl.fallback(to.repositoryUrl)
+            repositoryUrl.convention(to.repositoryUrl)
         }
     }
 }
 
 open class SonatypeAuth @Inject constructor(objects: ObjectFactory) : Auth() {
-    val user: Property<Secret> = objects.property()
-    val password: Property<Secret> = objects.property()
+    val user: Property<Secret> = objects.property<Secret>().apply { finalizeValueOnRead() }
+    val password: Property<Secret> = objects.property<Secret>().apply { finalizeValueOnRead() }
 
     override fun fallback(to: Auth) {
         if (to is SonatypeAuth) {
-            user.fallback(to.user)
-            password.fallback(to.password)
+            user.convention(to.user)
+            password.convention(to.password)
         }
     }
 }
