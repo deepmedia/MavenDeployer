@@ -46,7 +46,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.12.0-rc1" // on change, update both docs and README
+version = "0.12.0" // on change, update both docs and README
 
 deployer {
     verbose = true

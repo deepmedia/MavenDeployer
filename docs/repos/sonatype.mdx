@@ -4,18 +4,9 @@ title: Sonatype & Maven Central
 
 # Sonatype & Maven Central
 
-Add a new spec with `sonatypeSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL
-of the sonatype repo. This defaults to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/` -
-the Sonatype OSSRH which can be synced to Maven Central.
-
-Sonatype repositories make many fields mandatory:
-- authentication: use the `auth` block as shown below
-- signing
-- valid project url and scm
-- at least one developer and a license
-- possibly more
-
-Deployment will fail with clear errors notifying you about what's missing.
+Add a new spec with `sonatypeSpec {}` or `nexusSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL
+of the sonatype repo. This defaults to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`, one of the
+OSSRH urls that can be synced to Maven Central.
 
 ```kotlin
 deployer {
@@ -23,14 +14,14 @@ deployer {
     project.description.set("Handy tool to publish maven packages in different repositories.")
 
     sonatypeSpec {
-        // Sonatype configuration...
+        // Target URL. You can use `ossrh`, `ossrh1`, `ossrhSnapshots`, `ossrhSnapshots1` or your own URL
         repositoryUrl.set(ossrh1)
 
-        // Credentials used to register the package group into the OSSRH repository...
+        // For OSSRH projects, these are the credentials that were used to register the package group into OSSRH
         auth.user.set(secret("SONATYPE_USER"))
         auth.password.set(secret("SONATYPE_PASSWORD"))
 
-        // Signing is required
+        // Note: signing is required for Maven Central sync
         signing.key.set(secret("SIGNING_KEY"))
         signing.password.set(secret("SIGNING_PASSWORD"))
     }
@@ -43,3 +34,36 @@ deployer {
     }
 }
 ```
+
+## Maven Central sync
+
+Sonatype's OSSRH projects are allowed to sync artifacts with the [Maven Central](https://central.sonatype.org/) repository.
+The process is generally tricky, because you have to:
+
+- Build maven packages with a very strict set of rules (for example, signing is mandatory)
+- Deploy them to `oss.sonatype.org/service/local/staging/deploy/maven2` or `s01.oss.sonatype.org/service/local/staging/deploy/maven2`
+- Access the web interface at `oss.sonatype.org` or `s01.oss.sonatype.org`
+- Login with your credentials
+- Find the staging repository corresponding to the upload, `Close` it and then `Release` it
+
+Deployer streamlines the process so that only the first step is really your responsibility.
+First, enable maven central sync using `syncToMavenCentral`:
+
+```kotlin
+sonatypeSpec {
+    syncToMavenCentral = true
+
+    auth.user = secret("SONATYPE_USER")
+    auth.password = secret("SONATYPE_PASSWORD")
+}
+```
+
+Then simply run the deploy task. Deployer will:
+
+- Validate your artifacts and POM file, to ensure they won't be rejected by the backend
+- Fail with clear errors if any issue is found
+- Use Sonatype's REST APIs to create a staging repository in your Sonatype account
+- Upload the artifacts
+- Use Sonatype's REST APIs to close and release the staging repository
+
+
