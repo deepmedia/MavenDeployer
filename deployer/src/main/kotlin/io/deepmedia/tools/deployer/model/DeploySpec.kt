@@ -1,7 +1,6 @@
 package io.deepmedia.tools.deployer.model
 
 import io.deepmedia.tools.deployer.Logger
-import io.deepmedia.tools.deployer.configureSigning
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.Project
@@ -10,6 +9,7 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.publish.maven.MavenPom
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.newInstance
 import kotlin.reflect.KClass
 
@@ -56,16 +56,16 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
         signing.fallback(to.signing)
     }
 
-    internal open fun resolveSigning(target: Project): Pair<String, String>? {
+    internal abstract fun registerRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository
+    internal open fun registerInitializationTask(target: Project, name: String, repo: MavenArtifactRepository): TaskProvider<*>? = null
+    internal open fun registerFinalizationTask(target: Project, name: String, init: TaskProvider<*>?): TaskProvider<*>? = null
+
+    internal open fun readSignCredentials(target: Project): Pair<String, String>? {
         if (!signing.key.isPresent && !signing.password.isPresent) return null
         val key = signing.key.orNull?.resolve(target, "spec.signing.key") ?: error("Got signing password, but no key.")
         val password = signing.password.orNull?.resolve(target, "spec.signing.password")  ?: error("Got signing key, but no password.")
         return key to password
     }
-
-    internal abstract fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository
-
-    internal abstract fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository)
 
     internal open fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) = Unit
 

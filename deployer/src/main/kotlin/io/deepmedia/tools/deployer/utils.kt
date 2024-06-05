@@ -22,7 +22,9 @@ import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 
-
+internal fun String.capitalized(): String {
+    return replaceFirstChar { it.uppercaseChar() }
+}
 
 private var _hasKotlinPluginClasspath: Boolean? = null
 

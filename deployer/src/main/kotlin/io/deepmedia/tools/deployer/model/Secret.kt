@@ -1,40 +1,53 @@
 package io.deepmedia.tools.deployer.model
 
 import org.gradle.api.Project
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
+import java.io.File
 import java.io.FileInputStream
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class Secret(val key: String) {
     internal fun resolve(project: Project, location: String): String {
-        return project.findSecret(key)
+        return resolve(project.providers, project.layout, location)
+    }
+    internal fun resolve(providers: ProviderFactory, layout: ProjectLayout, location: String): String {
+        return findSecret(key, providers, layout)
             ?: error("Secret key $key (from $location) not found in environment variables nor properties.")
     }
 }
 
-private val localPropertiesCache = ConcurrentHashMap<Project, Properties>()
+private val localPropertiesCache = ConcurrentHashMap<File, Properties>()
 
-private fun Project.findSecret(key: String): String? {
+private fun findSecret(key: String, providers: ProviderFactory, layout: ProjectLayout): String? {
     // Try with environmental variable.
-    val env: String? = System.getenv(key)
+    val env = providers.environmentVariable(key).orNull
     if (!env.isNullOrEmpty()) return env
+
     // Try with findProperty.
-    val project = findProperty(key) as? String
-    if (!project.isNullOrEmpty()) return project
+    val prop = providers.gradleProperty(key).orNull
+    if (!prop.isNullOrEmpty()) return prop
+
     // Try with local.properties file.
-    val properties = localPropertiesCache.getOrPut(rootProject) {
-        val properties = Properties()
-        val file = rootProject.file("local.properties")
-        if (file.exists()) {
-            val stream = FileInputStream(file)
-            properties.load(stream)
-        }
-        properties
-    }
-    val local = properties!!.getProperty(key)
+    val dir = layout.projectDirectory.asFile
+    val local = localPropertiesCache.getOrPut(dir) { dir.localProperties() }?.getProperty(key)
     if (!local.isNullOrEmpty()) return local
+
     // We failed. Return null.
     return null
+}
+
+private fun File.localProperties(): Properties? {
+    val child = File(this, "local.properties")
+    if (child.exists()) {
+        val properties = Properties()
+        val stream = FileInputStream(child)
+        properties.load(stream)
+        return properties
+    }
+    return parentFile?.localProperties()
 }
 
 interface SecretScope {

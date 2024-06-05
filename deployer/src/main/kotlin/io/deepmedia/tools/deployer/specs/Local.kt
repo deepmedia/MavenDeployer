@@ -1,4 +1,4 @@
-package io.deepmedia.tools.deployer.impl
+package io.deepmedia.tools.deployer.specs
 
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
@@ -15,17 +15,13 @@ class LocalDeploySpec internal constructor(objects: ObjectFactory, name: String)
     : AbstractDeploySpec<Auth>(objects, name, Auth::class) {
     val directory: DirectoryProperty = objects.directoryProperty().apply { finalizeValueOnRead() }
 
-    override fun createMavenRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
+    override fun registerRepository(target: Project, repositories: RepositoryHandler): MavenArtifactRepository {
         return if (directory.isPresent) {
             val hash = abs(directory.get().asFile.absolutePath.hashCode()).toString()
             repositories.maven(directory) { this.name = hash }
         } else {
             repositories.mavenLocal()
         }
-    }
-
-    override fun resolveMavenRepository(target: Project, repository: MavenArtifactRepository) {
-        // Nothing to do
     }
 
     override fun fallback(to: DeploySpec) {

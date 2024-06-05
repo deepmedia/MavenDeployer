@@ -2,8 +2,7 @@
 
 package io.deepmedia.tools.deployer.tasks
 
-import io.deepmedia.tools.deployer.isKmpProject
-import io.deepmedia.tools.deployer.isKotlinProject
+import io.deepmedia.tools.deployer.capitalized
 import io.deepmedia.tools.deployer.maybeRegister
 import io.deepmedia.tools.deployer.model.Artifacts
 import io.deepmedia.tools.deployer.model.Component
@@ -43,7 +42,7 @@ internal fun Project.makeDocsJar(
         artifact = File(targetDir.asFile, targetName),
         extension = "jar",
         classifier = "javadoc",
-        builtBy = tasks.maybeRegister<Copy>("makeDocsJarFor${publication.capitalize()}") {
+        builtBy = tasks.maybeRegister<Copy>("makeDocsJarFor${publication.capitalized()}") {
             from(task)
             into(targetDir)
             rename { it.replace(task.get().archiveFileName.get(), targetName) }

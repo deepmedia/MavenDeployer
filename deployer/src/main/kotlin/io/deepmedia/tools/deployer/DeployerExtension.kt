@@ -1,18 +1,23 @@
 package io.deepmedia.tools.deployer
 
-import io.deepmedia.tools.deployer.impl.*
 import io.deepmedia.tools.deployer.model.*
+import io.deepmedia.tools.deployer.specs.*
 import org.gradle.api.Action
 import org.gradle.api.PolymorphicDomainObjectContainer
+import org.gradle.api.model.ObjectFactory
+import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.polymorphicDomainObjectContainer
 import org.gradle.kotlin.dsl.property
 import javax.inject.Inject
 
-open class DeployerExtension @Inject constructor(target: org.gradle.api.Project) : SecretScope, DeploySpec by DefaultDeploySpec(target) {
+open class DeployerExtension @Inject constructor(private val objects: ObjectFactory) : SecretScope, DeploySpec by DefaultDeploySpec(objects) {
 
-    val verbose = target.objects.property<Boolean>().convention(false)
+    val verbose = objects.property<Boolean>().convention(false)
 
-    private val objects = target.objects
+    // TODO: make this public. The problem is that OssrhService is a shared service and so it doesn't make sense to
+    //  configure values in a single gradle subproject (the first one would win)
+    internal val mavenCentralSync = objects.newInstance<SonatypeMavenCentralSync>()
+    internal fun mavenCentralSync(action: Action<SonatypeMavenCentralSync>) { action.execute(mavenCentralSync) }
 
     @Deprecated("DeployerExtension now *is* the default spec. Simply use `this`.")
     val defaultSpec get() = this
@@ -20,12 +25,6 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
     @Deprecated("DeployerExtension now *is* the default spec. Simply use `this`.")
     fun defaultSpec(action: Action<DeploySpec>) {
         action.execute(defaultSpec)
-    }
-
-    init {
-        target.whenEvaluated {
-            resolve(target)
-        }
     }
 
     fun auth(action: Action<Auth>) { action.execute(auth) }
@@ -41,7 +40,7 @@ open class DeployerExtension @Inject constructor(target: org.gradle.api.Project)
     }
 
     private fun specName(current: String, default: String): String {
-        return if (current.startsWith(default)) current else "$default${current.capitalize()}"
+        return if (current.startsWith(default)) current else "$default${current.capitalized()}"
     }
 
     fun localSpec(name: String = "local", configure: Action<LocalDeploySpec> = Action {  }) {

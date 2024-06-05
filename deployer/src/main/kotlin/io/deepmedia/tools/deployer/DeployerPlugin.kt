@@ -1,9 +1,11 @@
 package io.deepmedia.tools.deployer
 
-import io.deepmedia.tools.deployer.impl.GithubDeploySpec
-import io.deepmedia.tools.deployer.impl.LocalDeploySpec
-import io.deepmedia.tools.deployer.impl.SonatypeDeploySpec
+import io.deepmedia.tools.deployer.specs.GithubDeploySpec
+import io.deepmedia.tools.deployer.specs.LocalDeploySpec
+import io.deepmedia.tools.deployer.specs.SonatypeDeploySpec
 import io.deepmedia.tools.deployer.model.*
+import io.deepmedia.tools.deployer.ossrh.OssrhService
+import io.deepmedia.tools.deployer.specs.NexusDeploySpec
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -19,20 +21,6 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsageContext
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 
 
-internal class Logger(private val project: Project, private val tags: List<String>) {
-    val prefix = tags.joinToString(
-        separator = " ",
-        transform = { "[$it]" }
-    )
-
-    val verbose get() = project.extensions.getByType<DeployerExtension>().verbose.get()
-
-    inline operator fun invoke(message: () -> String) {
-        if (verbose) println("$prefix ${message()}")
-    }
-
-    fun child(tag: String) = Logger(project, tags + tag)
-}
 
 @Suppress("unused")
 class DeployerPlugin : Plugin<Project> {
@@ -41,9 +29,13 @@ class DeployerPlugin : Plugin<Project> {
         target.plugins.apply("maven-publish")
         target.plugins.apply("signing")
 
-        val log = Logger(target, listOf("DeployerPlugin", target.name))
+        val deployer = target.extensions.create("deployer", DeployerExtension::class.java)
+        target.whenEvaluated {
+            deployer.resolve(target)
+        }
 
-        val deployer = target.extensions.create("deployer", DeployerExtension::class.java, target)
+        val log = Logger(deployer.verbose, listOf(target.name))
+
         val deployAll = target.tasks.register("deployAll") {
             this.group = "Deployment"
             this.description = "Deploy all specs."
@@ -52,24 +44,32 @@ class DeployerPlugin : Plugin<Project> {
         // All to force eager creation otherwise we don't create the tasks
         // Note specs are not configured, only the name is reliable
         deployer.specs.all {
-            val deployThis = registerDeployTask(
-                log = log.child(name),
-                spec = this as AbstractDeploySpec<*>,
-                target = target,
-            )
+            this as AbstractDeploySpec<*>
+
+            if (this is SonatypeDeploySpec) {
+                target.gradle.sharedServices.registerIfAbsent(OssrhService.Name, OssrhService::class) {
+                    parameters.closeTimeout.set(deployer.mavenCentralSync.closeTimeout.map { it.inWholeMilliseconds })
+                    parameters.releaseTimeout.set(deployer.mavenCentralSync.releaseTimeout.map { it.inWholeMilliseconds })
+                    parameters.pollingDelay.set(deployer.mavenCentralSync.pollingDelay.map { it.inWholeMilliseconds })
+                    parameters.verboseLogging.set(deployer.verbose)
+                }
+            }
+
+            val deployThis = registerDeployTasks(log.child(name), this, target)
             deployAll.configure { dependsOn(deployThis) }
         }
 
         registerDebugTasks(target)
     }
 
-    private fun registerDeployTask(log: Logger, spec: AbstractDeploySpec<*>, target: Project): TaskProvider<*> {
-        val deployTask = target.tasks.register("deploy${spec.name.capitalize()}") {
+    private fun registerDeployTasks(log: Logger, spec: AbstractDeploySpec<*>, target: Project): TaskProvider<*> {
+
+        val deployTask = target.tasks.register("deploy${spec.name.capitalized()}") {
             this.group = "Deployment"
             this.description = "Deploy '${spec.name}' spec (${
                 when (spec) {
                     is LocalDeploySpec -> "local maven repository"
-                    is SonatypeDeploySpec -> "Sonatype repository"
+                    is SonatypeDeploySpec -> "Sonatype/Nexus repository"
                     is GithubDeploySpec -> "GitHub packages"
                     else -> error("Unexpected spec type: ${spec::class}")
                 }
@@ -81,17 +81,29 @@ class DeployerPlugin : Plugin<Project> {
             // now spec was configured by the user. Resolve it and do stuff
             spec.resolve(target)
 
-            // Configure repository. This is shared among components
+            // Register repository. This is shared among components
             val publishing = target.extensions.getByType(PublishingExtension::class.java)
-            val repository = spec.createMavenRepository(target, publishing.repositories)
+            val repository = spec.registerRepository(target, publishing.repositories)
             log { "Created publishing repository '${repository.name}'" }
+
+            // Register preDeploy and postDeploy tasks.
+            val preDeployTask = spec.registerInitializationTask(target, "preDeploy${spec.name.capitalized()}", repository)
+            val postDeployTask = spec.registerFinalizationTask(target, "postDeploy${spec.name.capitalized()}", preDeployTask)
+            deployTask.configure {
+                dependsOn(*listOfNotNull(preDeployTask, postDeployTask).toTypedArray())
+            }
+            if (preDeployTask != null && postDeployTask != null) {
+                postDeployTask.configure { mustRunAfter(preDeployTask) }
+            }
 
             // Process components
             log { "Processing ${spec.content.components.size}+ components" }
-            spec.content.components.configureEach {
-                val logger = log.child(shortName)
-                val publicationTask = registerPublicationTask(logger, this, spec, target, repository)
+            val signInfo = spec.readSignCredentials(target)
+            spec.content.components.all {
+                val publicationTask = registerPublicationTask(log.child(shortName), this, spec, target, repository, signInfo)
                 deployTask.configure { dependsOn(publicationTask) }
+                publicationTask.configure { if (preDeployTask != null) mustRunAfter(preDeployTask) }
+                postDeployTask?.configure { mustRunAfter(publicationTask) }
             }
         }
 
@@ -103,7 +115,8 @@ class DeployerPlugin : Plugin<Project> {
         component: Component,
         spec: AbstractDeploySpec<*>,
         target: Project,
-        repository: MavenArtifactRepository
+        repository: MavenArtifactRepository,
+        signInfo: Pair<String, String>?
     ): TaskProvider<*> {
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         val publication = component.maybeCreatePublication(publishing.publications, spec)
@@ -111,8 +124,8 @@ class DeployerPlugin : Plugin<Project> {
         // Repository exists and publication was created. This means that publishing plugin will
         // now have created the publication task, though it still must be configured.
         val mavenPublish = target.tasks.named(
-            "publish${publication.name.capitalize()}Publication" +
-                    "To${repository.name.capitalize()}Repository"
+            "publish${publication.name.capitalized()}Publication" +
+                    "To${repository.name.capitalized()}Repository"
         )
 
         // Configure when possible
@@ -120,7 +133,12 @@ class DeployerPlugin : Plugin<Project> {
         component.whenConfigurable(target) {
             log { "Component is now configurable" }
             target.configureArtifacts(spec, component, publication, log)
-            val sign = target.configureSigning(spec, publication, log)
+
+            // Configure signing if present
+            val sign = when (signInfo) {
+                null -> null
+                else -> target.configureSigning(signInfo, publication, log)
+            }
             target.configurePom(spec, component, publication, log)
 
             // Add maven validation, mostly for sonatype
@@ -129,7 +147,6 @@ class DeployerPlugin : Plugin<Project> {
                 onlyIf { component.enabled.get() }
                 doFirst {
                     log { "Starting artifact and POM validation"}
-                    spec.resolveMavenRepository(target, repository)
                     spec.validateMavenArtifacts(target, publication.artifacts, log)
                     spec.validateMavenPom(publication.pom)
                     log { "Completed artifact and POM validation"}

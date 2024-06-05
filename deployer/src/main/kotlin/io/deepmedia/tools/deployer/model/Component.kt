@@ -1,5 +1,6 @@
 package io.deepmedia.tools.deployer.model
 
+import io.deepmedia.tools.deployer.capitalized
 import io.deepmedia.tools.deployer.tasks.*
 import io.deepmedia.tools.deployer.tasks.makeDocsJar
 import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
@@ -51,13 +52,13 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
     internal fun maybeCreatePublication(publications: PublicationContainer, spec: DeploySpec): MavenPublication {
         val origin = origin.get()
         val name = when (origin) {
-            is Origin.SoftwareComponent -> origin.component.name + "SoftwareFor" + spec.name.capitalize()
-            is Origin.SoftwareComponentName -> origin.name + "SoftwareFor" + spec.name.capitalize()
+            is Origin.SoftwareComponent -> origin.component.name + "SoftwareFor" + spec.name.capitalized()
+            is Origin.SoftwareComponentName -> origin.name + "SoftwareFor" + spec.name.capitalized()
             is Origin.MavenPublicationName -> when {
-                origin.clone -> origin.name + "ClonedFor" + spec.name.capitalize()
+                origin.clone -> origin.name + "ClonedFor" + spec.name.capitalized()
                 else -> origin.name
             }
-            is Origin.ArtifactSet -> "artifacts" + origin.id + "For" + spec.name.capitalize()
+            is Origin.ArtifactSet -> "artifacts" + origin.id + "For" + spec.name.capitalized()
         }
         val existing = publications.findByName(name)
         return when {

@@ -1,22 +1,22 @@
 @file:Suppress("UnstableApiUsage")
 
-import io.deepmedia.tools.deployer.impl.SonatypeAuth
-import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.model.Secret
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinOnlyTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
-
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.11.0-rc01"
+    id("io.deepmedia.tools.deployer") version "0.12.0-rc1"
+    kotlin("plugin.serialization") version "1.9.23"
 }
 
 dependencies {
     compileOnly("com.android.tools.build:gradle:8.0.2")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+
     api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
+
+    implementation("io.ktor:ktor-client-core:2.3.11")
+    implementation("io.ktor:ktor-client-cio:2.3.11")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
 }
 
 // Gradle 7.X has embedded kotlin version 1.6, but kotlin-dsl plugins are compiled with 1.4 for compatibility with older
@@ -46,7 +46,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.11.0" // on change, update both docs and README
+version = "0.12.0-rc1" // on change, update both docs and README
 
 deployer {
     verbose = true
@@ -79,6 +79,7 @@ deployer {
     sonatypeSpec {
         auth.user = secret("SONATYPE_USER")
         auth.password = secret("SONATYPE_PASSWORD")
+        syncToMavenCentral = true
     }
 
     // use "deploySonatypeSnapshot" to deploy to sonatype snapshots repo

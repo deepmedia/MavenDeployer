@@ -2,6 +2,7 @@
 
 package io.deepmedia.tools.deployer.tasks
 
+import io.deepmedia.tools.deployer.capitalized
 import io.deepmedia.tools.deployer.maybeRegister
 import io.deepmedia.tools.deployer.model.Artifacts
 import io.deepmedia.tools.deployer.model.Component
@@ -42,7 +43,7 @@ internal fun Project.makeSourcesJar(
         artifact = File(targetDir.asFile, targetName),
         extension = "jar",
         classifier = "sources",
-        builtBy = tasks.maybeRegister<Copy>("makeSourcesJarFor${publication.capitalize()}") {
+        builtBy = tasks.maybeRegister<Copy>("makeSourcesJarFor${publication.capitalized()}") {
             from(task)
             into(targetDir)
             rename { it.replace(task.get().archiveFileName.get(), targetName) }
