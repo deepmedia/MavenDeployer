@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/deepmedia/MavenDeployer/workflows/Build/badge.svg?event=push)](https://github.com/deepmedia/MavenDeployer/actions)
+[![Build Status](https://github.com/deepmedia/MavenDeployer/actions/workflows/build.yml/badge.svg?event=push)](https://github.com/deepmedia/MavenDeployer/actions)
 [![Release](https://img.shields.io/github/release/deepmedia/MavenDeployer.svg)](https://github.com/deepmedia/MavenDeployer/releases)
 [![Issues](https://img.shields.io/github/issues-raw/deepmedia/MavenDeployer.svg)](https://github.com/deepmedia/MavenDeployer/issues)
 
