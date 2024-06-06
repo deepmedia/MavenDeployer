@@ -41,9 +41,9 @@ typealias NexusMavenCentralSync = SonatypeMavenCentralSync
 
 
 open class SonatypeMavenCentralSync @Inject constructor(objects: ObjectFactory) {
-    val pollingDelay: Property<Duration> = objects.property<Duration>().convention(10.seconds)
-    val closeTimeout: Property<Duration> = objects.property<Duration>().convention(6.minutes)
-    val releaseTimeout: Property<Duration> = objects.property<Duration>().convention(3.minutes)
+    val pollingDelay: Property<Duration> = objects.property<Duration>().convention(15.seconds)
+    val closeTimeout: Property<Duration> = objects.property<Duration>().convention(12.minutes)
+    val releaseTimeout: Property<Duration> = objects.property<Duration>().convention(6.minutes)
     fun pollingDelay(milliseconds: Long) { pollingDelay.set(milliseconds.milliseconds) }
     fun closeTimeout(milliseconds: Long) { closeTimeout.set(milliseconds.milliseconds) }
     fun releaseTimeout(milliseconds: Long) { releaseTimeout.set(milliseconds.milliseconds) }
