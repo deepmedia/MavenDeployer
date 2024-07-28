@@ -45,12 +45,12 @@ deployer {
     release.version = "1.0.0" // our default
     ...
 
-    sonatypeSpec {
+    nexusSpec {
         // release.version is 1.0.0
         ...
     }
 
-    sonatypeSpec("snapshot") {
+    nexusSpec("snapshot") {
         // snapshot publishing. Override the default version
         release.version = "1.0.0-SNAPSHOT"
         ...
@@ -61,11 +61,11 @@ deployer {
 ## Tasks
 
 For each spec, the plugin will register a gradle task named `deploy<SpecType><SpecName>`. The spec type is either local,
-github, or sonatype. The name defaults to `""` but can be configured. In addition, an extra task called `deployAll` will be
+github, nexus or centralPortal. The name defaults to `""` but can be configured. In addition, an extra task called `deployAll` will be
 generated, running all deployments at once. In the example above, the following tasks are generated:
 
-- `deploySonatype`
-- `deploySonatypeSnapshot`
+- `deployNexus`
+- `deployNexusSnapshot`
 - `deployAll`
 
 > **Note**: Use ./gradlew tasks --group='Deployment' to list all deploy tasks.

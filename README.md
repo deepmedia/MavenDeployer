@@ -9,7 +9,8 @@
 A lightweight, handy Gradle plugin to deploy your maven packages (for example, Android AARs, Java JARs, Kotlin KLibs)
 to different kinds of repositories. It supports publishing to:
 - local directories, to use them as local maven repositories in other projects
-- [Maven Central](https://central.sonatype.org/) repository via Sonatype's OSSRH
+- [Maven Central](https://central.sonatype.com/) repository via Sonatype's OSSRH
+- [Maven Central](https://central.sonatype.com/) repository via Sonatype's [Central Portal](https://central.sonatype.org/register/central-portal/)
 - Other Sonatype Nexus repositories
 - [GitHub Packages](https://docs.github.com/en/packages)
 
@@ -26,7 +27,7 @@ pluginManagement {
 
 // build.gradle.kts of deployable modules
 plugins {
-    id("io.deepmedia.tools.deployer") version "0.12.0"
+    id("io.deepmedia.tools.deployer") version "0.13.0"
 }
 ```
 

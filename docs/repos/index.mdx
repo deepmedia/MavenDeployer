@@ -3,6 +3,7 @@ title: Repositories
 docs:
   - local
   - sonatype
+  - central-portal
   - github
 ---
 
@@ -13,6 +14,7 @@ exposed through subclasses of the `DeploySpec` type, so that, for example, a `lo
 `LocalDeploySpec` properties.
 
 `MavenDeployer` supports publishing to:
-- local directories, to use them as local maven repositories in other projects [[docs](local)]
-- Sonatype Nexus repositories, with support for syncing to [Maven Central](https://central.sonatype.org/) [[docs](sonatype)]
-- [GitHub Packages](https://docs.github.com/en/packages) [[docs](github)]
+- [local directories](local), to use them as local maven repositories in other projects
+- Sonatype's [Nexus](sonatype) repositories, with support for syncing OSSRH projects to [Maven Central](https://central.sonatype.org/)
+- Sonatype's [Central Portal](central-portal) uploads, a modern entry point for Maven Central
+- [GitHub Packages](github)

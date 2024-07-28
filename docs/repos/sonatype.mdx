@@ -1,10 +1,16 @@
 ---
-title: Sonatype & Maven Central
+title: Nexus & OSSRH
 ---
 
-# Sonatype & Maven Central
+# Nexus & OSSRH
 
-Add a new spec with `sonatypeSpec {}` or `nexusSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL
+Nexus deployments let you upload packages to a remote Sonatype Nexus repository. Notably, these
+are commonly used for OSSRH projects to become part of the [Maven Central](https://central.sonatype.com/) repo.
+
+> Sonatype recently devised a new entry point for Maven Central called the [Central Portal](https://central.sonatype.org/register/central-portal/).
+> If you are a new publisher or an old publisher who decided to migrate to Central Portal, please [check the docs](central-portal).
+
+Add a new spec with `nexusSpec {}`. It adds a mandatory property called `repositoryUrl`, which is the remote URL
 of the sonatype repo. This defaults to `https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/`, one of the
 OSSRH urls that can be synced to Maven Central.
 
@@ -13,7 +19,7 @@ deployer {
     // Common configuration...
     project.description.set("Handy tool to publish maven packages in different repositories.")
 
-    sonatypeSpec {
+    nexusSpec {
         // Target URL. You can use `ossrh`, `ossrh1`, `ossrhSnapshots`, `ossrhSnapshots1` or your own URL
         repositoryUrl.set(ossrh1)
 
@@ -27,7 +33,7 @@ deployer {
     }
 
     // If needed, you can add other named specs.
-    sonatypeSpec("snapshot") {
+    nexusSpec("snapshot") {
         repositoryUrl.set(ossrhSnapshots1)
         release.version.set("latest-SNAPSHOT")
         ...
@@ -37,7 +43,7 @@ deployer {
 
 ## Maven Central sync
 
-Sonatype's OSSRH projects are allowed to sync artifacts with the [Maven Central](https://central.sonatype.org/) repository.
+Sonatype's OSSRH projects are allowed to sync artifacts with the [Maven Central](https://central.sonatype.com/) repository.
 The process is generally tricky, because you have to:
 
 - Build maven packages with a very strict set of rules (for example, signing is mandatory)
@@ -50,7 +56,7 @@ Deployer streamlines the process so that only the first step is really your resp
 First, enable maven central sync using `syncToMavenCentral`:
 
 ```kotlin
-sonatypeSpec {
+nexusSpec {
     syncToMavenCentral = true
 
     auth.user = secret("SONATYPE_USER")
