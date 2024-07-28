@@ -6,9 +6,9 @@ import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Auth
 import io.deepmedia.tools.deployer.model.DeploySpec
 import io.deepmedia.tools.deployer.model.Secret
-import io.deepmedia.tools.deployer.ossrh.OssrhInfo
-import io.deepmedia.tools.deployer.ossrh.OssrhService
-import io.deepmedia.tools.deployer.ossrh.OssrhServer
+import io.deepmedia.tools.deployer.central.ossrh.OssrhInfo
+import io.deepmedia.tools.deployer.central.ossrh.OssrhService
+import io.deepmedia.tools.deployer.central.ossrh.OssrhServer
 import io.deepmedia.tools.deployer.tasks.isDocsJar
 import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.DefaultTask

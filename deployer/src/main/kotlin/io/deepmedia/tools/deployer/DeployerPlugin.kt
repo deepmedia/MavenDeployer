@@ -4,8 +4,9 @@ import io.deepmedia.tools.deployer.specs.GithubDeploySpec
 import io.deepmedia.tools.deployer.specs.LocalDeploySpec
 import io.deepmedia.tools.deployer.specs.SonatypeDeploySpec
 import io.deepmedia.tools.deployer.model.*
-import io.deepmedia.tools.deployer.ossrh.OssrhService
-import io.deepmedia.tools.deployer.specs.NexusDeploySpec
+import io.deepmedia.tools.deployer.central.ossrh.OssrhService
+import io.deepmedia.tools.deployer.central.portal.CentralPortalService
+import io.deepmedia.tools.deployer.specs.CentralPortalDeploySpec
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -54,6 +55,13 @@ class DeployerPlugin : Plugin<Project> {
                     parameters.verboseLogging.set(deployer.verbose)
                 }
             }
+            if (this is CentralPortalDeploySpec) {
+                target.gradle.sharedServices.registerIfAbsent(CentralPortalService.Name, CentralPortalService::class) {
+                    parameters.timeout.set(deployer.centralPortalSettings.timeout.map { it.inWholeMilliseconds })
+                    parameters.pollingDelay.set(deployer.centralPortalSettings.pollingDelay.map { it.inWholeMilliseconds })
+                    parameters.verboseLogging.set(deployer.verbose)
+                }
+            }
 
             val deployThis = registerDeployTasks(log.child(name), this, target)
             deployAll.configure { dependsOn(deployThis) }
@@ -71,6 +79,7 @@ class DeployerPlugin : Plugin<Project> {
                     is LocalDeploySpec -> "local maven repository"
                     is SonatypeDeploySpec -> "Sonatype/Nexus repository"
                     is GithubDeploySpec -> "GitHub packages"
+                    is CentralPortalDeploySpec -> "Central Portal uploads"
                     else -> error("Unexpected spec type: ${spec::class}")
                 }
             })."

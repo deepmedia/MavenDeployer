@@ -1,4 +1,4 @@
-package io.deepmedia.tools.deployer.ossrh
+package io.deepmedia.tools.deployer.central.ossrh
 
 
 // OSSRH: Nexus-powered repositories provided by Sonatype to OSS projects for

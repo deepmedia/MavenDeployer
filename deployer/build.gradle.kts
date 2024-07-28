@@ -3,7 +3,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.12.0-rc1"
+    id("io.deepmedia.tools.deployer") version "0.12.0"
     kotlin("plugin.serialization") version "1.9.23"
 }
 
@@ -46,7 +46,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.12.0" // on change, update both docs and README
+version = "0.13.0-rc1" // on change, update both docs and README
 
 deployer {
     verbose = true
@@ -75,15 +75,15 @@ deployer {
         // directory.set(layout.buildDirectory.get().dir("inspect"))
     }
 
-    // use "deploySonatype" to deploy to OSSRH / maven central
-    sonatypeSpec {
+    // use "deployNexus" to deploy to OSSRH / maven central
+    nexusSpec {
         auth.user = secret("SONATYPE_USER")
         auth.password = secret("SONATYPE_PASSWORD")
         syncToMavenCentral = true
     }
 
-    // use "deploySonatypeSnapshot" to deploy to sonatype snapshots repo
-    sonatypeSpec("snapshot") {
+    // use "deployNexusSnapshot" to deploy to sonatype snapshots repo
+    nexusSpec("snapshot") {
         auth.user = secret("SONATYPE_USER")
         auth.password = secret("SONATYPE_PASSWORD")
         repositoryUrl = ossrhSnapshots1
@@ -99,4 +99,22 @@ deployer {
             token = secret("GHUB_PERSONAL_ACCESS_TOKEN")
         }
     }
+
+    // Just for testing centralPortal
+    /* centralPortalSpec {
+        auth.user = secret("CENTRAL_PORTAL_USERNAME")
+        auth.password = secret("CENTRAL_PORTAL_PASSWORD")
+        allowMavenCentralSync = false
+        projectInfo.groupId.set("io.github.natario1")
+        content {
+            inherit.set(false)
+            component {
+                fromMavenPublication("pluginMaven", clone = true)
+                packaging.set("jar")
+                kotlinSources()
+                emptyDocs()
+            }
+
+        }
+    } */
 }
