@@ -3,7 +3,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.12.0"
+    id("io.deepmedia.tools.deployer") version "0.13.0-rc1"
     kotlin("plugin.serialization") version "1.9.23"
 }
 
@@ -46,7 +46,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.13.0-rc1" // on change, update both docs and README
+version = "0.13.0" // on change, update both docs and README
 
 deployer {
     verbose = true
