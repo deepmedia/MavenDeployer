@@ -1,11 +1,10 @@
-package io.deepmedia.tools.deployer.ossrh
+package io.deepmedia.tools.deployer.central.ossrh
 
 import io.deepmedia.tools.deployer.Logger
 import kotlinx.coroutines.*
 import org.gradle.api.provider.Property
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 

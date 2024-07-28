@@ -1,4 +1,4 @@
-package io.deepmedia.tools.deployer.ossrh
+package io.deepmedia.tools.deployer.central.ossrh
 
 internal data class OssrhInfo(
     val server: OssrhServer,

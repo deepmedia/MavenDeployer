@@ -19,6 +19,9 @@ open class DeployerExtension @Inject constructor(private val objects: ObjectFact
     internal val mavenCentralSync = objects.newInstance<SonatypeMavenCentralSync>()
     internal fun mavenCentralSync(action: Action<SonatypeMavenCentralSync>) { action.execute(mavenCentralSync) }
 
+    internal val centralPortalSettings = objects.newInstance<CentralPortalSettings>()
+    internal fun centralPortalSettings(action: Action<CentralPortalSettings>) { action.execute(centralPortalSettings) }
+
     @Deprecated("DeployerExtension now *is* the default spec. Simply use `this`.")
     val defaultSpec get() = this
 
@@ -37,6 +40,7 @@ open class DeployerExtension @Inject constructor(private val objects: ObjectFact
         registerFactory(LocalDeploySpec::class.java) { LocalDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
         registerFactory(GithubDeploySpec::class.java) { GithubDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
         registerFactory(SonatypeDeploySpec::class.java) { SonatypeDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
+        registerFactory(CentralPortalDeploySpec::class.java) { CentralPortalDeploySpec(objects, it).apply { fallback(this@DeployerExtension) } }
     }
 
     private fun specName(current: String, default: String): String {
@@ -47,6 +51,7 @@ open class DeployerExtension @Inject constructor(private val objects: ObjectFact
         specs.register(specName(name, "local"), LocalDeploySpec::class.java, configure)
     }
 
+    @Deprecated("sonatypeSpec is ambiguous. Use either nexusSpec (for OSSRH) or centralPortalSpec (for Central Portal).")
     fun sonatypeSpec(name: String = "sonatype", configure: Action<SonatypeDeploySpec> = Action {  }) {
         specs.register(specName(name, "sonatype"), SonatypeDeploySpec::class.java, configure)
     }
@@ -57,5 +62,9 @@ open class DeployerExtension @Inject constructor(private val objects: ObjectFact
 
     fun githubSpec(name: String = "github", configure: Action<GithubDeploySpec> = Action {  }) {
         specs.register(specName(name, "github"), GithubDeploySpec::class.java, configure)
+    }
+
+    fun centralPortalSpec(name: String = "centralPortal", configure: Action<CentralPortalDeploySpec> = Action { }) {
+        specs.register(specName(name, "centralPortal"), CentralPortalDeploySpec::class.java, configure)
     }
 }

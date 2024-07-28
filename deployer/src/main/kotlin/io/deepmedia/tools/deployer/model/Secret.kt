@@ -43,8 +43,7 @@ private fun File.localProperties(): Properties? {
     val child = File(this, "local.properties")
     if (child.exists()) {
         val properties = Properties()
-        val stream = FileInputStream(child)
-        properties.load(stream)
+        child.inputStream().use { properties.load(it) }
         return properties
     }
     return parentFile?.localProperties()
