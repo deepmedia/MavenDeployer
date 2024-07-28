@@ -1,0 +1,71 @@
+---
+title: Central Portal
+---
+
+# Central Portal
+
+[Central Portal](https://central.sonatype.org/register/central-portal/) is Sonatype's new publishing mechanism
+that serves as a modern entry point to the [Maven Central](https://central.sonatype.com/) repository.
+
+> The portal is a recent addition in the Maven Central publishing ecosystem. If you have pushed to Maven Central
+> before, you likely need to use our [Nexus support](sonatype).
+
+Add a new spec with `centralPortalSpec {}` and start configuring it:
+
+```kotlin
+deployer {
+    // Common configuration...
+    project.description.set("Handy tool to publish maven packages in different repositories.")
+
+    centralPortalSpec {
+        // Take these credentials from the Generate User Token page at https://central.sonatype.com/account
+        auth.user.set(secret("CENTRAL_PORTAL_USER"))
+        auth.password.set(secret("CENTRAL_PORTAL_PASSWORD"))
+
+        // Signing is required
+        signing.key.set(secret("SIGNING_KEY"))
+        signing.password.set(secret("SIGNING_PASSWORD"))
+    }
+
+    // If needed, you can add other named specs and configure them differently.
+    // Each spec gets its own deploy* task.
+    centralPortalSpec("foo") {
+        ...
+    }
+}
+```
+
+## Maven Central sync
+
+Central Portal deployments, when properly configured, will be synced to [Maven Central](https://central.sonatype.com/).
+For this to happen you generally need three steps:
+
+1. Build maven packages with a very strict set of rules (for example, signing is mandatory)
+2. Upload them, for example through the web interface at https://central.sonatype.com
+3. Wait for validation, then finalize the deployment for it to be synced to Maven Central
+
+Deployer plugin will take care of these steps for you:
+
+- It validates your artifacts and POM file locally, to ensure they won't be rejected by the backend
+- It fails with clear errors if any issue is found
+- It uses Sonatype's REST APIs to upload your artifacts (even if they belong to different specs!)
+- It uses Sonatype's REST APIs to finalize the deployment after validation
+
+### Disallowing finalization
+
+If you'd rather do the third step on your own (for example, because you want to check the files in the
+web interface before they get synced), you have the option to do so:
+
+```kotlin
+deployer {
+    ...
+    centralPortalSpec {
+       allowMavenCentralSync = false
+    }
+}
+```
+
+When `allowMavenCentralSync` is set to false, the deploy task (e.g. `deployCentralPortal`) will be considered
+successful if the remote validation succeeds, and all that's left for Maven Central sync is that you finalize
+the deployment manually through Sonatype's [web interface](https://central.sonatype.com).
+
