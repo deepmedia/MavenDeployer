@@ -3,7 +3,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.14.0-alpha14"
+    id("io.deepmedia.tools.deployer") version "0.14.0-alpha1"
     kotlin("plugin.serialization") version "1.9.23"
     id("org.jetbrains.dokka") version "1.9.20"
 }
@@ -33,7 +33,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.14.0-alpha16" // on change, update both docs and README
+version = "0.14.0-alpha2" // on change, update both docs and README
 
 val javadocs = tasks.register<Jar>("dokkaJavadocJar") {
     dependsOn(tasks.dokkaJavadoc)
@@ -66,7 +66,7 @@ deployer {
 
     // use "deployLocal" to deploy to local maven repository
     localSpec {
-        directory.set(rootProject.layout.buildDirectory.get().dir("inspect"))
+        // directory.set(rootProject.layout.buildDirectory.get().dir("inspect"))
     }
 
     // use "deployNexus" to deploy to OSSRH / maven central
