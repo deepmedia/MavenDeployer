@@ -2,10 +2,8 @@ package io.deepmedia.tools.deployer.model
 
 import io.deepmedia.tools.deployer.capitalized
 import io.deepmedia.tools.deployer.tasks.*
-import io.deepmedia.tools.deployer.tasks.makeDocsJar
 import io.deepmedia.tools.deployer.tasks.makeEmptyDocsJar
 import io.deepmedia.tools.deployer.tasks.makeEmptySourcesJar
-import io.deepmedia.tools.deployer.tasks.makeSourcesJar
 import org.gradle.api.*
 import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.model.ObjectFactory
@@ -43,22 +41,22 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
     internal val origin: Property<Origin> = objects.property()
 
     internal val shortName: String get() = when (val o = origin.get()) {
-        is Origin.SoftwareComponent -> "soft:${o.component.name}"
-        is Origin.SoftwareComponentName -> "softn:${o.name}"
-        is Origin.MavenPublicationName -> "pub:${o.name}"
-        is Origin.ArtifactSet -> "art:${o.id}"
+        is Origin.SoftwareComponent -> "${o.component.name}Component"
+        is Origin.SoftwareComponentName -> "${o.name}Component"
+        is Origin.MavenPublicationName -> "${o.name}Publication"
+        is Origin.ArtifactSet -> "artifacts${o.id}"
     }
 
     internal fun maybeCreatePublication(publications: PublicationContainer, spec: DeploySpec): MavenPublication {
         val origin = origin.get()
         val name = when (origin) {
-            is Origin.SoftwareComponent -> origin.component.name + "SoftwareFor" + spec.name.capitalized()
-            is Origin.SoftwareComponentName -> origin.name + "SoftwareFor" + spec.name.capitalized()
+            is Origin.SoftwareComponent -> spec.name + origin.component.name.capitalized() + "Component"
+            is Origin.SoftwareComponentName -> spec.name + origin.name.capitalized() + "Component"
             is Origin.MavenPublicationName -> when {
-                origin.clone -> origin.name + "ClonedFor" + spec.name.capitalized()
+                origin.clone -> spec.name + origin.name.capitalized() + "Clone"
                 else -> origin.name
             }
-            is Origin.ArtifactSet -> "artifacts" + origin.id + "For" + spec.name.capitalized()
+            is Origin.ArtifactSet -> spec.name + "Artifacts" + origin.id
         }
         val existing = publications.findByName(name)
         return when {
@@ -189,29 +187,52 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         configureWhen { block -> block() }
     }
 
-    private val sources: Property<Artifacts.Entry> = objects.property()
-    private val docs: Property<Artifacts.Entry> = objects.property()
-    fun sources(task: Any?) { sources.set(task?.let { Artifacts.Entry(it, it) }) }
-    fun docs(task: Any?) { docs.set(task?.let { Artifacts.Entry(it, it) }) }
+    internal val sources: Property<Artifacts.Entry> = objects.property()
+    internal val docs: Property<Artifacts.Entry> = objects.property()
 
-    private val fallbackSources: Property<Project.() -> TaskProvider<Jar>> = objects.property()
-    private val fallbackDocs: Property<Project.() -> TaskProvider<Jar>> = objects.property()
+    fun sources(artifact: Any, classifier: String = "sources", extension: String = "jar", builtBy: Any? = null) {
+        sources.set(Artifacts.Entry.Dictionary(artifact, classifier, extension, builtBy))
+    }
 
-    fun emptySources() { fallbackSources.set { makeEmptySourcesJar } }
-    fun kotlinSources() { fallbackSources.set { makeKotlinSourcesJar } }
-    fun javaSources() { fallbackSources.set { makeJavaSourcesJar } }
+    fun emptySources() {
+        sources.set(Artifacts.Entry.Promise { it.makeEmptySourcesJar })
+    }
 
-    fun emptyDocs() { fallbackDocs.set { makeEmptyDocsJar } }
+    fun kotlinSources() {
+        sources.set(Artifacts.Entry.Promise { it.makeKotlinSourcesJar })
+    }
 
-    internal fun resolveSources(project: Project, spec: DeploySpec): Artifacts.Entry? {
-        val fallback = fallbackSources.map { project.makeSourcesJar(spec, this, project.it()) }
+    fun javaSources() {
+        sources.set(Artifacts.Entry.Promise { it.makeJavaSourcesJar })
+    }
+
+    fun docs(artifact: Any, classifier: String = "javadoc", extension: String = "jar", builtBy: Any? = null) {
+        docs.set(Artifacts.Entry.Dictionary(artifact, classifier, extension, builtBy))
+    }
+
+    fun emptyDocs() {
+        docs.set(Artifacts.Entry.Promise { it.makeEmptyDocsJar })
+    }
+
+    // private val fallbackSources: Property<Project.() -> TaskProvider<Jar>> = objects.property()
+    // private val fallbackDocs: Property<Project.() -> TaskProvider<Jar>> = objects.property()
+    // fun emptySources() { fallbackSources.set { makeEmptySourcesJar } }
+    // fun kotlinSources() { fallbackSources.set { makeKotlinSourcesJar } }
+    // fun javaSources() { fallbackSources.set { makeJavaSourcesJar } }
+    // fun emptyDocs() { fallbackDocs.set { makeEmptyDocsJar } }
+    /* internal fun resolveSources(project: Project): Artifacts.Entry? {
+        val fallback = fallbackSources.map { project.it() }
+            .map { taskProvider -> Artifacts.Entry(taskProvider, taskProvider) }
+        // val fallback = fallbackSources.map { project.makeSourcesJar(spec, this, project.it()) }
         return sources.orElse(fallback).orNull
     }
 
-    internal fun resolveDocs(project: Project, spec: DeploySpec): Artifacts.Entry? {
-        val fallback = fallbackDocs.map { project.makeDocsJar(spec, this, project.it()) }
+    internal fun resolveDocs(project: Project): Artifacts.Entry? {
+        val fallback = fallbackSources.map { project.it() }
+            .map { taskProvider -> Artifacts.Entry(taskProvider, taskProvider) }
+        // val fallback = fallbackDocs.map { project.makeDocsJar(spec, this, project.it()) }
         return docs.orElse(fallback).orNull
-    }
+    } */
 
     val extras: Artifacts = objects.newInstance()
 

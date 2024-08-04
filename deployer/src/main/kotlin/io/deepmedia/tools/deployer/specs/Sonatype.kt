@@ -172,7 +172,9 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
             require(pom.developers.isNotEmpty()) {
                 "Sonatype POM requires at least one developer. Please add it to spec.projectInfo.developers."
             }
-            require(pom.scm.connection.isPresent && pom.scm.developerConnection.isPresent && pom.scm.url.isPresent) {
+
+            val scm = requireNotNull(pom.scm) { "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm." }
+            require(scm.connection.isPresent && scm.developerConnection.isPresent && scm.url.isPresent) {
                 "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm."
             }
         }

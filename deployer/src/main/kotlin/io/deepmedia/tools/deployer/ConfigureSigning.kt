@@ -44,5 +44,6 @@ internal fun Project.configureSigning(
     val signatory = ext.signatory
     return ext.sign(maven).single().apply {
         setSignatory(signatory)
+        log { "configureSigning: ${maven.name} signatures = ${this.signatures.map { it.signatureType.extension }}" }
     }
 }

@@ -105,17 +105,18 @@ class CentralPortalDeploySpec internal constructor(objects: ObjectFactory, name:
     override fun validateMavenPom(pom: MavenPom) {
         super.validateMavenPom(pom)
         require(pom.url.isPresent) {
-            "Sonatype POM requires a project url. Please add it to spec.projectInfo.url."
+            "Central Portal POM requires a project url. Please add it to spec.projectInfo.url."
         }
         pom as MavenPomInternal
         require(pom.licenses.isNotEmpty()) {
-            "Sonatype POM requires at least one license. Please add it to spec.projectInfo.licenses."
+            "Central Portal POM requires at least one license. Please add it to spec.projectInfo.licenses."
         }
         require(pom.developers.isNotEmpty()) {
-            "Sonatype POM requires at least one developer. Please add it to spec.projectInfo.developers."
+            "Central Portal POM requires at least one developer. Please add it to spec.projectInfo.developers."
         }
-        require(pom.scm.connection.isPresent && pom.scm.developerConnection.isPresent && pom.scm.url.isPresent) {
-            "Sonatype POM requires complete SCM info. Please add it to spec.projectInfo.scm."
+        val scm = requireNotNull(pom.scm) { "Central Portal POM requires complete SCM info. Please add it to spec.projectInfo.scm." }
+        require(scm.connection.isPresent && scm.developerConnection.isPresent && scm.url.isPresent) {
+            "Central Portal POM requires complete SCM info. Please add it to spec.projectInfo.scm."
         }
     }
 }
