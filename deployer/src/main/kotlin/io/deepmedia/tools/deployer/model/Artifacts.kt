@@ -1,21 +1,70 @@
 package io.deepmedia.tools.deployer.model
 
+import org.gradle.api.Project
+import org.gradle.api.artifacts.PublishArtifact
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Provider
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.kotlin.dsl.domainObjectSet
 import javax.inject.Inject
 
 open class Artifacts @Inject constructor(objects: ObjectFactory) {
 
-    internal class Entry(val artifact: Any, val builtBy: Any?) {
-        constructor(artifact: Any, classifier: String, extension: String, builtBy: Any?) : this(
-            artifact = mapOf(
-                "source" to artifact,
-                "classifier" to classifier,
-                "extension" to extension
-            ),
-            builtBy = builtBy
-        )
+    internal sealed class Entry {
+        sealed class Resolved(private val builtByCandidate: Any?) : Entry() {
+            abstract val artifact: Any
+
+            // Unwraps dictionary notation and providers, so the result should be one of the accepted types
+            // (PublishArtifact, AbstractArchiveTask, or something resolvable with file())
+            val unwrappedArtifact: Any get() {
+                val unwrapDictionary = when (this) {
+                    is Dictionary -> this.source
+                    is Regular -> this.artifact
+                }
+                return when (unwrapDictionary) {
+                    is Provider<*> -> unwrapDictionary.get()
+                    else -> unwrapDictionary
+                }
+            }
+
+            // Note that MavenPublication.artifact() *should* already correctly pull the dependencies,
+            // but we use an intermediate task (Workarounds.kt) and it is important to keep them explicitly
+            val builtBy: Any? get() = builtByCandidate ?: when (val raw = unwrappedArtifact) {
+                is PublishArtifact -> raw.buildDependencies
+                is AbstractArchiveTask -> raw
+                else -> null
+            }
+        }
+
+        class Regular(override val artifact: Any, builtBy: Any?) : Resolved(builtBy)
+
+        class Dictionary(private val dictionary: Map<String, Any?>, builtBy: Any?) : Resolved(builtBy) {
+            constructor(source: Any, classifier: String?, extension: String, builtBy: Any?) : this(
+                mapOf(
+                    "source" to source,
+                    "classifier" to classifier,
+                    "extension" to extension
+                ),
+                builtBy
+            )
+            val source: Any get() = dictionary["source"]!!
+            val classifier: String? get() = dictionary["classifier"] as? String
+            val extension: String get() = dictionary["extension"] as String
+            override val artifact get() = dictionary
+        }
+
+        class Promise(val make: (Project) -> Any) : Entry() {
+            fun resolve(project: Project): Resolved = Unknown(make(project), null)
+        }
+
+        companion object {
+            @Suppress("UNCHECKED_CAST")
+            fun Unknown(artifact: Any, builtBy: Any?): Resolved = when {
+                artifact is Map<*, *> -> Dictionary(artifact as Map<String, Any?>, builtBy)
+                else -> Regular(artifact, builtBy)
+            }
+        }
     }
 
     internal val entries = objects.domainObjectSet(Entry::class)
@@ -44,10 +93,10 @@ open class Artifacts @Inject constructor(objects: ObjectFactory) {
      * - A Kotlin function or Groovy closure. It may return any of the types in this list.
      */
     fun artifact(artifact: Any, builtBy: Any? = null) {
-        entries.add(Entry(artifact, builtBy))
+        entries.add(Entry.Unknown(artifact, builtBy))
     }
 
-    fun artifact(artifact: Any, classifier: String, extension: String, builtBy: Any? = null) {
-        entries.add(Entry(artifact, classifier, extension, builtBy))
+    fun artifact(artifact: Any, classifier: String?, extension: String, builtBy: Any? = null) {
+        entries.add(Entry.Dictionary(artifact, classifier, extension, builtBy))
     }
 }

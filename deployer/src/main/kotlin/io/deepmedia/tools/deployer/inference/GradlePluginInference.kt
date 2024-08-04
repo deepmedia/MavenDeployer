@@ -2,8 +2,6 @@ package io.deepmedia.tools.deployer.inference
 
 import io.deepmedia.tools.deployer.model.Component
 import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.tasks.makeDocsJar
-import io.deepmedia.tools.deployer.tasks.makeSourcesJar
 import io.deepmedia.tools.deployer.whenEvaluated
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.getByType

@@ -3,27 +3,35 @@ package io.deepmedia.tools.deployer
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
 import io.deepmedia.tools.deployer.model.Artifacts
 import io.deepmedia.tools.deployer.model.Component
+import io.deepmedia.tools.deployer.model.DeploySpec
+import io.deepmedia.tools.deployer.tasks.wrapped
 import org.gradle.api.Project
 import org.gradle.api.component.SoftwareComponent
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenArtifactSet
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.internal.publication.DefaultMavenPublication
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal
 import org.gradle.kotlin.dsl.get
 
-private fun MavenPublication.addArtifacts(log: Logger, artifacts: Artifacts) {
+private fun MavenPublication.addArtifacts(log: Logger, artifacts: Artifacts, project: Project, spec: DeploySpec, component: Component, groupId: String) {
+    var suffix = 0
     artifacts.entries.configureEach {
-        log { "configureArtifacts: adding $artifact to MavenPublication $name" }
-        addArtifact(this)
+        addArtifact(log, this, project, spec, component, artifactId = "${groupId}$suffix")
+        suffix++
     }
 }
 
-private fun MavenPublication.addArtifact(artifact: Artifacts.Entry) {
-    val res = artifact(artifact.artifact)
-    if (artifact.builtBy != null) {
-        res.builtBy(artifact.builtBy)
+private fun MavenPublication.addArtifact(log: Logger, entry: Artifacts.Entry, project: Project, spec: DeploySpec, component: Component, artifactId: String) {
+    val resolvedEntry = when (entry) {
+        is Artifacts.Entry.Promise -> entry.resolve(project)
+        is Artifacts.Entry.Resolved -> entry
+    }
+    val wrappedEntry = resolvedEntry.wrapped(project, log, spec, component, artifactId)
+    log { "configureArtifacts: adding ${wrappedEntry.artifact} to MavenPublication $name" }
+    val res = artifact(wrappedEntry.artifact)
+    if (wrappedEntry.builtBy != null) {
+        res.builtBy(wrappedEntry.builtBy)
     }
 }
 
@@ -47,7 +55,7 @@ internal fun Project.configureArtifacts(
         }
         is Component.Origin.ArtifactSet -> {
             log { "configureArtifacts: artifact-based, copying artifacts over" }
-            maven.addArtifacts(log, origin.artifacts)
+            maven.addArtifacts(log, origin.artifacts, this, spec, component, "origin")
         }
         is Component.Origin.MavenPublicationName -> {
             if (!origin.clone) {
@@ -73,15 +81,15 @@ internal fun Project.configureArtifacts(
     // Also had to stop using spec.provideDefault*ForComponent: we don't know if the inferred component already
     // has (or will have...) that kind of artifact, so adding one automatically will lead to crashes.
 
-    component.resolveSources(this, spec)?.let {
+    component.sources.orNull?.let {
         log { "configureArtifacts: adding sources to MavenPublication ${maven.name}" }
-        maven.addArtifact(it)
+        maven.addArtifact(log, it, this, spec, component, "sources")
     }
-    component.resolveDocs(this, spec)?.let {
+    component.docs.orNull?.let {
         log { "configureArtifacts: adding docs to MavenPublication ${maven.name}" }
-        maven.addArtifact(it)
+        maven.addArtifact(log, it, this, spec, component, "docs")
     }
-    maven.addArtifacts(log, component.extras)
+    maven.addArtifacts(log, component.extras, this, spec, component, "extras")
 }
 
 private fun Project.clonePublication(
