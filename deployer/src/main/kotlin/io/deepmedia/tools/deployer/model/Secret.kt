@@ -32,7 +32,7 @@ private fun findSecret(key: String, providers: ProviderFactory, layout: ProjectL
 
     // Try with local.properties file.
     val dir = layout.projectDirectory.asFile
-    val local = localPropertiesCache.getOrPut(dir) { dir.localProperties() }?.getProperty(key)
+    val local = localPropertiesCache.getOrPut(dir) { dir.localProperties() ?: Properties() }?.getProperty(key)
     if (!local.isNullOrEmpty()) return local
 
     // We failed. Return null.
