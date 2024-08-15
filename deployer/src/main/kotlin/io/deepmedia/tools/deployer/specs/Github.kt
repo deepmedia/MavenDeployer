@@ -11,7 +11,6 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.artifacts.repositories.PasswordCredentials
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.internal.AbstractTask
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
@@ -86,7 +85,7 @@ internal open class GithubInitializationTask @Inject constructor(
     @TaskAction fun execute() {
         val credentials = credentials.get()
         val auth = auth.get()
-        credentials.username = auth.user.get().resolve(providers, layout, "spec.auth.user")
-        credentials.password = auth.token.get().resolve(providers, layout, "spec.auth.token")
+        credentials.username = auth.user.get().resolveOrThrow(providers, layout, "spec.auth.user")
+        credentials.password = auth.token.get().resolveOrThrow(providers, layout, "spec.auth.token")
     }
 }

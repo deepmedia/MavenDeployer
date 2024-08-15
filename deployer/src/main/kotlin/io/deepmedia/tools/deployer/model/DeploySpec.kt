@@ -60,11 +60,18 @@ abstract class AbstractDeploySpec<A: Auth> constructor(
     internal open fun registerInitializationTask(target: Project, name: String, repo: MavenArtifactRepository): TaskProvider<*>? = null
     internal open fun registerFinalizationTask(target: Project, name: String, init: TaskProvider<*>?): TaskProvider<*>? = null
 
-    internal open fun readSignCredentials(target: Project): Pair<String, String>? {
-        if (!signing.key.isPresent && !signing.password.isPresent) return null
-        val key = signing.key.orNull?.resolve(target, "spec.signing.key") ?: error("Got signing password, but no key.")
-        val password = signing.password.orNull?.resolve(target, "spec.signing.password")  ?: error("Got signing key, but no password.")
-        return key to password
+    internal open fun readSignCredentials(target: Project): Signing.Credentials {
+        val hasKey = signing.key.isPresent && signing.key.get().hasKey
+        val hasPassword = signing.password.isPresent && signing.password.get().hasKey
+        if (!hasKey && !hasPassword) return Signing.NotDeclared
+        val key = signing.key.orNull?.resolveOrNull(target.providers, target.layout)
+        val password = signing.password.orNull?.resolveOrNull(target.providers, target.layout)
+        return when {
+            key != null && password != null -> Signing.Provided(key, password)
+            key != null -> Signing.NotFound("Could not resolve signing password at ${this.name}.signing.password (${signing.password.orNull?.key}).")
+            password != null -> Signing.NotFound("Could not resolve signing key at ${this.name}.signing.key (${signing.key.orNull?.key}).")
+            else -> Signing.NotFound("Could not resolve signing key (${signing.key.orNull?.key}) and password (${signing.password.orNull?.key}) at ${this.name}.signing.")
+        }
     }
 
     internal open fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) = Unit
