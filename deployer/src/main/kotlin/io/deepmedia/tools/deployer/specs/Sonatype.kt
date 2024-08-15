@@ -2,13 +2,10 @@ package io.deepmedia.tools.deployer.specs
 
 import io.deepmedia.tools.deployer.Logger
 import io.deepmedia.tools.deployer.dump
-import io.deepmedia.tools.deployer.model.AbstractDeploySpec
-import io.deepmedia.tools.deployer.model.Auth
-import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.model.Secret
 import io.deepmedia.tools.deployer.central.ossrh.OssrhInfo
 import io.deepmedia.tools.deployer.central.ossrh.OssrhService
 import io.deepmedia.tools.deployer.central.ossrh.OssrhServer
+import io.deepmedia.tools.deployer.model.*
 import io.deepmedia.tools.deployer.tasks.isDocsJar
 import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.DefaultTask
@@ -109,12 +106,9 @@ class SonatypeDeploySpec internal constructor(objects: ObjectFactory, name: Stri
         }
     }
 
-    override fun readSignCredentials(target: Project): Pair<String, String>? {
-        val result = super.readSignCredentials(target)
-        if (result == null && maySyncToMavenCentral.get()) {
-            error("Signing is mandatory for OSSRH/Maven Central deployments. Please add spec.signing.key and spec.signing.password.")
-        }
-        return result
+    override fun readSignCredentials(target: Project): Signing.Credentials = when (val result = super.readSignCredentials(target)) {
+        Signing.NotDeclared -> error("Signing is mandatory for OSSRH/Maven Central deployments. Please add spec.signing.key and spec.signing.password.")
+        else -> result
     }
 
     /*override fun provideDefaultDocsForComponent(target: Project, component: Component): Any {
@@ -212,8 +206,8 @@ internal abstract class SonatypeInitializationTask @Inject constructor(
     fun execute() {
         val repo = repo.get()
         val auth = auth.get()
-        val username = auth.user.get().resolve(providers, layout, "spec.auth.user")
-        val password = auth.password.get().resolve(providers, layout, "spec.auth.password")
+        val username = auth.user.get().resolveOrThrow(providers, layout, "spec.auth.user")
+        val password = auth.password.get().resolveOrThrow(providers, layout, "spec.auth.password")
         repo.credentials.username = username
         repo.credentials.password = password
         if (sync.get()) {

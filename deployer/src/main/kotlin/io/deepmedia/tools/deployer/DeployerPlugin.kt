@@ -125,7 +125,7 @@ class DeployerPlugin : Plugin<Project> {
         spec: AbstractDeploySpec<*>,
         target: Project,
         repository: MavenArtifactRepository,
-        signInfo: Pair<String, String>?
+        signCredentials: Signing.Credentials
     ): TaskProvider<*> {
         val publishing = target.extensions.getByType(PublishingExtension::class.java)
         val publication = component.maybeCreatePublication(publishing.publications, spec)
@@ -144,17 +144,20 @@ class DeployerPlugin : Plugin<Project> {
             target.configureArtifacts(spec, component, publication, log)
 
             // Configure signing if present
-            val sign = when (signInfo) {
-                null -> null
-                else -> target.configureSigning(signInfo, publication, log)
+            val signTask = when (signCredentials) {
+                is Signing.Provided -> target.configureSigning(signCredentials, publication, log)
+                else -> null
             }
             target.configurePom(spec, component, publication, log)
 
             // Add maven validation, mostly for sonatype
             mavenPublish.configure {
-                if (sign != null) dependsOn(sign)
+                if (signTask != null) dependsOn(signTask)
                 onlyIf { component.enabled.get() }
                 doFirst {
+                    if (signCredentials is Signing.NotFound && signCredentials.error != null) {
+                        error(signCredentials.error)
+                    }
                     log { "Starting artifact and POM validation"}
                     spec.validateMavenArtifacts(target, publication.artifacts, log)
                     spec.validateMavenPom(publication.pom)

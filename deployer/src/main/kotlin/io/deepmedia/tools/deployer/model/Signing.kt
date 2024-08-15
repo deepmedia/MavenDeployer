@@ -18,4 +18,10 @@ open class Signing @Inject constructor(objects: ObjectFactory) : SecretScope {
     internal fun resolve(target: org.gradle.api.Project, spec: DeploySpec) {
         // Nothing to do
     }
+
+    internal sealed interface Credentials
+
+    internal class Provided(val key: String, val password: String) : Credentials
+    internal class NotFound(val error: String? = null) : Credentials
+    internal object NotDeclared : Credentials
 }

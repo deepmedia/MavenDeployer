@@ -1,6 +1,7 @@
 package io.deepmedia.tools.deployer
 
 import io.deepmedia.tools.deployer.model.AbstractDeploySpec
+import io.deepmedia.tools.deployer.model.Signing
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.publish.maven.MavenPublication
@@ -22,7 +23,7 @@ import org.gradle.security.internal.pgp.BaseInMemoryPgpSignatoryProvider
  * at execution time, all tasks use the last key-value pair which is not what we want.
  */
 internal fun Project.configureSigning(
-    info: Pair<String, String>,
+    credentials: Signing.Provided,
     maven: MavenPublication,
     log: Logger
 ): Sign {
@@ -40,7 +41,7 @@ internal fun Project.configureSigning(
     }
 
     val ext = extensions.getByType(SigningExtension::class)
-    ext.useInMemoryPgpKeys(info.first, info.second)
+    ext.useInMemoryPgpKeys(credentials.key, credentials.password)
     val signatory = ext.signatory
     return ext.sign(maven).single().apply {
         setSignatory(signatory)

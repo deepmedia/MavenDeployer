@@ -10,12 +10,14 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class Secret(val key: String) {
-    internal fun resolve(project: Project, location: String): String {
-        return resolve(project.providers, project.layout, location)
+    internal val hasKey get() = key.isNotEmpty()
+
+    internal fun resolveOrThrow(providers: ProviderFactory, layout: ProjectLayout, location: String): String {
+        return resolveOrNull(providers, layout) ?: error("Secret key $key (from $location) not found in environment variables nor properties.")
     }
-    internal fun resolve(providers: ProviderFactory, layout: ProjectLayout, location: String): String {
+    internal fun resolveOrNull(providers: ProviderFactory, layout: ProjectLayout): String? {
+        if (!hasKey) return null
         return findSecret(key, providers, layout)
-            ?: error("Secret key $key (from $location) not found in environment variables nor properties.")
     }
 }
 
@@ -51,4 +53,5 @@ private fun File.localProperties(): Properties? {
 
 interface SecretScope {
     fun secret(key: String) = Secret(key)
+    fun absent() = Secret("")
 }

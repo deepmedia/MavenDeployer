@@ -2,25 +2,15 @@ package io.deepmedia.tools.deployer.specs
 
 import io.deepmedia.tools.deployer.Logger
 import io.deepmedia.tools.deployer.dump
-import io.deepmedia.tools.deployer.model.AbstractDeploySpec
-import io.deepmedia.tools.deployer.model.Auth
-import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.model.Secret
-import io.deepmedia.tools.deployer.central.ossrh.OssrhInfo
-import io.deepmedia.tools.deployer.central.ossrh.OssrhService
-import io.deepmedia.tools.deployer.central.ossrh.OssrhServer
 import io.deepmedia.tools.deployer.central.portal.CentralPortalInfo
 import io.deepmedia.tools.deployer.central.portal.CentralPortalService
+import io.deepmedia.tools.deployer.model.*
 import io.deepmedia.tools.deployer.tasks.isDocsJar
 import io.deepmedia.tools.deployer.tasks.isSourcesJar
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.file.ArchiveOperations
-import org.gradle.api.file.Directory
-import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -35,7 +25,6 @@ import org.gradle.kotlin.dsl.property
 import org.gradle.kotlin.dsl.register
 import java.io.File
 import javax.inject.Inject
-import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -86,9 +75,9 @@ class CentralPortalDeploySpec internal constructor(objects: ObjectFactory, name:
         }
     }
 
-    override fun readSignCredentials(target: Project): Pair<String, String> {
-        val result = super.readSignCredentials(target) ?: error("Signing is mandatory for Central Portal deployments. Please add spec.signing.key and spec.signing.password.")
-        return result
+    override fun readSignCredentials(target: Project): Signing.Credentials = when (val result = super.readSignCredentials(target)) {
+        Signing.NotDeclared -> error("Signing is mandatory for Central Portal deployments. Please add spec.signing.key and spec.signing.password.")
+        else -> result
     }
 
     override fun validateMavenArtifacts(target: Project, artifacts: MavenArtifactSet, log: Logger) {
@@ -165,8 +154,8 @@ internal abstract class CentralPortalInitializationTask @Inject constructor(
     @TaskAction
     fun execute() {
         val auth = auth.get()
-        val username = auth.user.get().resolve(providers, layout, "spec.auth.user")
-        val password = auth.password.get().resolve(providers, layout, "spec.auth.password")
+        val username = auth.user.get().resolveOrThrow(providers, layout, "spec.auth.user")
+        val password = auth.password.get().resolveOrThrow(providers, layout, "spec.auth.password")
         val info = CentralPortalInfo(username, password, allowSync.get())
         val storageRepository = File(storageRepository.get())
         storageRepository.delete() // Delete any stale data
