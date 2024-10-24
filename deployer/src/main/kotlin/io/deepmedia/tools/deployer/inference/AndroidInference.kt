@@ -1,8 +1,12 @@
 package io.deepmedia.tools.deployer.inference
 
+import io.deepmedia.tools.deployer.isKotlinProject
 import io.deepmedia.tools.deployer.model.Component
 import io.deepmedia.tools.deployer.model.DeploySpec
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 /**
  * Android targets can be configured for publishing in two different ways:
@@ -11,7 +15,7 @@ import org.gradle.api.Project
  *   with a custom name. The name of the single variant, or the custom name of a multi-variant publiation, will be
  *   the name of the software component.
  *   https://android.googlesource.com/platform/tools/base/+/refs/heads/mirror-goog-studio-main/build-system/gradle-api/src/main/java/com/android/build/api/dsl/LibraryPublishing.kt
- *   TODO: there doesn't seem to be any way of reading variants from AGP
+ *   NOTE: there doesn't seem to be any way of reading variants from AGP
  *
  * 2. Via KGP's configuration block.
  *    In this case, the software components can be retrieved using [KotlinTarget.components] as we do in fromKotlinTarget.
@@ -20,11 +24,27 @@ import org.gradle.api.Project
  *    - there may be more than one component, if user chose to do so
  *    - [KotlinTarget.components] *must* be called in a afterEvaluate block, after AGP's afterEvaluate.
  *
- * We can't support 1. until a proper AGP API exist.
- * We do already support 2. through KotlinInference, so this is useless for now.
  */
-internal class AndroidLibraryInference : Inference {
+internal class AndroidInference(private val componentNames: List<String>) : Inference {
+
     override fun inferComponents(project: Project, spec: DeploySpec, create: (Component.() -> Unit) -> Component) {
-        TODO("Not yet implemented")
+        project.plugins.withId("com.android.library") {
+            val kotlin = if (project.isKotlinProject) project.kotlinExtension else null
+            componentNames.forEach { componentName ->
+                create {
+                    fromSoftwareComponent(componentName)
+
+                    packaging.set("aar")
+
+                    if (kotlin is KotlinMultiplatformExtension) {
+                        val androidTargets = kotlin.targets.matching { it.platformType == KotlinPlatformType.androidJvm }
+                        artifactId.set {
+                            val target = androidTargets.firstOrNull { it.components.any { it.name == componentName } } ?: androidTargets.first()
+                            "$it-${target.name.lowercase()}"
+                        }
+                    }
+                }
+            }
+        }
     }
 }

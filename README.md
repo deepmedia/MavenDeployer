@@ -16,6 +16,16 @@ to different kinds of repositories. It supports publishing to:
 
 > For Maven Central builds, the plugin takes care of releasing the artifacts using Sonatype REST APIs so you don't have to use their web UI. 
 
+
+It supports automatic configuration for a certain set of projects:
+
+- [Android Projects](https://opensource.deepmedia.io/deployer/artifacts#android-projects)
+- [Kotlin Projects](https://opensource.deepmedia.io/deployer/artifacts#kotlin-regular-projects)
+- [Kotlin Multiplatform Projects](https://opensource.deepmedia.io/deployer/artifacts#kotlin-multiplatform-projects)
+- [Gradle Plugin Projects](https://opensource.deepmedia.io/deployer/artifacts#gradle-plugin-projects)
+
+In addition, you may configure deployments manually based on some existing `SoftwareComponent`, `MavenPublication` or simple file artifacts.
+
 ```kotlin
 // settings.gradle.kts
 pluginManagement {
@@ -27,7 +37,7 @@ pluginManagement {
 
 // build.gradle.kts of deployable modules
 plugins {
-    id("io.deepmedia.tools.deployer") version "0.14.0"
+    id("io.deepmedia.tools.deployer") version "0.15.0-alpha1"
 }
 ```
 

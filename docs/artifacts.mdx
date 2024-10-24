@@ -9,16 +9,17 @@ Each spec can support multiple components, each one corresponding to a maven pub
 
 ## Built-in components
 
-Inside the `content {}`, a few utilities are available so that:
-- You give the deployer some hints about the kind of project that you are working on
-- The deployer infers a list of components that you will want to export
+Inside the `content {}` block, a few utilities are available so that:
+- You give us some hints about the kind of project that you are working on
+- We infer a list of components that you will want to export
 
 ##### Kotlin Multiplatform projects
 
 Use `content.kotlinComponents()`. The spec will export:
 - One component for Kotlin Metadata (the `common` target)
-- One component per declared target
-- For Android targets, one component per exported variant
+- One component per declared kotlin target
+
+> If your Kotlin project includes Android, you should also use [`androidComponents()`](#android-projects).
 
 ```kotlin
 content {
@@ -30,14 +31,36 @@ content {
 
 ##### Kotlin regular projects
 
-Again, use `content.kotlinComponents()`. The spec will export:
-- if target is Android, one component per configured variant
-- in all other cases (JS, JVM, ...), one component only
+Again, use `content.kotlinComponents()`. The spec will export a single component based for the desired platform.
+
+> If your Kotlin project targets Android, you should use [`androidComponents()`](#android-projects) instead.
 
 ```kotlin
 content {
     kotlinComponents {
         // Optional configuration, invoked on the component.
+    }
+}
+```
+
+##### Android projects
+
+Use `content.androidComponents("softwareComponentName")` for Android projects. This function accepts a vararg
+list of software component names, which you must declare in the regular `android {}` configuration.
+
+Unfortunately, Android Gradle Plugin offers no API to read the variants that you configured for publishing, so
+the exact names must be passed to the deployer, too.
+
+```kotlin
+android {
+    publishing {
+        singleVariant("release")
+        multipleVariants("merged") { includeBuildTypeValues("debug", "release") }
+    }
+}
+content {
+    androidComponents("release", "merged") {
+        // Optional configuration, invoked on each component.
     }
 }
 ```

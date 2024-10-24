@@ -20,3 +20,12 @@ to different kinds of repositories. It supports publishing to:
 
 > For Maven Central builds, the plugin takes care of releasing the artifacts using Sonatype REST APIs so you don't have to use their web UI.
 
+It supports automatic configuration for a certain set of projects:
+
+- [Android Projects](artifacts#android-projects)
+- [Kotlin Projects](artifacts#kotlin-regular-projects)
+- [Kotlin Multiplatform Projects](artifacts#kotlin-multiplatform-projects)
+- [Gradle Plugin Projects](artifacts#gradle-plugin-projects)
+
+In addition, you may configure deployments manually based on some existing `SoftwareComponent`, `MavenPublication` or simple file artifacts.
+

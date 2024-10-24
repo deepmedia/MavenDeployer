@@ -2,7 +2,6 @@ package io.deepmedia.tools.deployer.inference
 
 import io.deepmedia.tools.deployer.model.Component
 import io.deepmedia.tools.deployer.model.DeploySpec
-import io.deepmedia.tools.deployer.whenEvaluated
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
@@ -16,33 +15,19 @@ internal class KotlinInference : Inference {
     private val pluginIds = listOf(
         "org.jetbrains.kotlin.jvm",
         "org.jetbrains.kotlin.js",
-        "org.jetbrains.kotlin.android",
         "org.jetbrains.kotlin.multiplatform"
     )
 
     private fun inferComponent(target: KotlinTarget, multiplatform: Boolean, create: (Component.() -> Unit) -> Component) {
+        if (target is KotlinAndroidTarget) {
+            // Should use AndroidInference!
+            return
+        }
         if (target is KotlinOnlyTarget<*>) {
             create {
                 fromKotlinTarget(target)
                 if (multiplatform && target.platformType != KotlinPlatformType.common) {
                     artifactId.set { "$it-${target.name.lowercase()}" }
-                }
-            }
-        } else if (target is KotlinAndroidTarget) {
-            // Android's KotlinTarget.components must be called in afterEvaluate,
-            // possibly nested so we jump after AGP's afterEvaluate blocks.
-            // There may be 0, 1 or more components depending on how KotlinAndroidTarget was configured.
-            // NOTE: if multiple components are present, they will have the same artifactId.
-            target.project.whenEvaluated {
-                target.project.whenEvaluated {
-                    (target as KotlinTarget).components.forEach { component ->
-                        create {
-                            fromSoftwareComponent(component, tag = target)
-                            if (multiplatform) {
-                                artifactId.set { "$it-${target.name.lowercase()}" }
-                            }
-                        }
-                    }
                 }
             }
         } else {

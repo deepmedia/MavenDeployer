@@ -1,5 +1,6 @@
 package io.deepmedia.tools.deployer.model
 
+import io.deepmedia.tools.deployer.inference.AndroidInference
 import io.deepmedia.tools.deployer.inference.GradlePluginInference
 import io.deepmedia.tools.deployer.inference.Inference
 import io.deepmedia.tools.deployer.inference.KotlinInference
@@ -25,62 +26,38 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         return component
     }
 
-    private val inferenceAction = objects.property<Action<Component>>()
-    private val inference = objects.property<Inference>()
+    private data class InferenceData(val inference: Inference, val action: Action<Component>)
+    private val inferenceData = objects.listProperty<InferenceData>()
 
     fun kotlinComponents(action: Action<Component> = Action { }) {
-        inference = KotlinInference()
-        inferenceAction = action
+        inferenceData.add(InferenceData(KotlinInference(), action))
     }
 
     fun gradlePluginComponents(action: Action<Component> = Action { }) {
-        inference = GradlePluginInference()
-        inferenceAction = action
+        inferenceData.add(InferenceData(GradlePluginInference(), action))
     }
 
-    // private val sourcesInjection = objects.property<String>()
-    // private val docsInjection = objects.property<String>()
+    fun androidComponents(componentName: String, vararg otherComponentNames: String, action: Action<Component> = Action { }) {
+        inferenceData.add(InferenceData(AndroidInference(listOf(componentName, *otherComponentNames)), action))
+    }
 
     internal fun fallback(to: Content) {
-        // inherit.fallback(to.inherit) // doesn't seem right
-        // sourcesInjection.fallback(to.sourcesInjection)
-        // docsInjection.fallback(to.docsInjection)
         to.inheritedComponents.all { inheritedComponents.add(this) }
         to.inheritedComponents.whenObjectRemoved { inheritedComponents.remove(this) }
         to.declaredComponents.all { inheritedComponents.add(this) }
         to.declaredComponents.whenObjectRemoved { inheritedComponents.remove(this) }
     }
 
-    /* fun emptySources() { sourcesInjection.set("empty") }
-    fun emtpyDocs() { docsInjection.set("empty") }
-    @Deprecated("autoDocs is deprecated.", level = DeprecationLevel.WARNING)
-    fun autoDocs() { docsInjection.set("auto") }
-    @Deprecated("autoSources is deprecated.", level = DeprecationLevel.WARNING)
-    fun autoSources() { sourcesInjection.set("auto") } */
-
     internal fun resolve(project: Project, spec: DeploySpec) {
         inherit.finalizeValue() // fixes 'components'
-        inference.finalizeValue()
-        inferenceAction.finalizeValue()
-        inference.orNull?.inferComponents(project, spec) { configure ->
-            component {
-                configure()
-                inferenceAction.orNull?.execute(this)
+        inferenceData.finalizeValue()
+        inferenceData.get().forEach {
+            it.inference.inferComponents(project, spec) { configure ->
+                component {
+                    configure()
+                    it.action.execute(this)
+                }
             }
         }
-        /* val commonSources = sourcesInjection.orNull
-        val commonDocs = docsInjection.orNull
-        allComponents.configureEach {
-            when {
-                sources.isPresent -> { /* already provided */ }
-                commonSources == "empty" -> sources(project.makeSourcesJar(spec, this, true))
-                commonSources == "auto" -> sources(project.makeSourcesJar(spec, this, false))
-            }
-            when {
-                docs.isPresent -> { /* already provided */ }
-                commonDocs == "empty" -> docs(project.makeDocsJar(spec, this, true))
-                commonDocs == "auto" -> docs(project.makeDocsJar(spec, this, false))
-            }
-        } */
     }
 }
