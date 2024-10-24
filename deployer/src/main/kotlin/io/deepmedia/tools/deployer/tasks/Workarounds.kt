@@ -79,6 +79,8 @@ internal fun Artifacts.Entry.Resolved.wrapped(project: Project, logger: Logger, 
         else -> when (val data = unwrappedArtifact) {
             is PublishArtifact -> data.classifier to data.extension
             is AbstractArchiveTask -> data.archiveClassifier.orNull to data.archiveExtension.get()
+            // NOTE: logic here is very weak, could at least check if last() seems to be a version number and if so,
+            // we can infer that this file has no classifier (that is, it's the main POM artifact)
             else -> resolvedFile.nameWithoutExtension.split("-").last() to resolvedFile.extension
         }
     }

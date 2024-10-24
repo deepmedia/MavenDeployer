@@ -3,13 +3,13 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.14.0-alpha1"
+    id("io.deepmedia.tools.deployer") version "0.14.0"
     kotlin("plugin.serialization") version "1.9.23"
     id("org.jetbrains.dokka") version "1.9.20"
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:8.0.2")
+    compileOnly("com.android.tools.build:gradle:8.1.1")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
 
     // api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
@@ -33,7 +33,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.14.0" // on change, update README
+version = "0.15.0-alpha1" // on change, update README
 
 val javadocs = tasks.register<Jar>("dokkaJavadocJar") {
     dependsOn(tasks.dokkaJavadoc)
