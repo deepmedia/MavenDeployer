@@ -33,7 +33,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.15.0-alpha1" // on change, update README
+version = "0.15.0" // on change, update README
 
 val javadocs = tasks.register<Jar>("dokkaJavadocJar") {
     dependsOn(tasks.dokkaJavadoc)
