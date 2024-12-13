@@ -29,13 +29,8 @@ internal class GradlePluginInference : Inference {
 
     private fun inferComponents(project: Project, spec: DeploySpec, gradlePlugins: GradlePluginDevelopmentExtension, create: (Component.() -> Unit) -> Component) {
         val mainComponent = create {
-            /* if (project.isKotlinProject) {
-                val kotlin = project.kotlinExtension as KotlinSingleTargetExtension<*>
-                fromKotlinTarget(kotlin.target as KotlinOnlyTarget<*>)
-            } else { */
-                fromMavenPublication("pluginMaven", clone = true)
-                packaging.set("jar")
-            // }
+            fromMavenPublication("pluginMaven", clone = true)
+            packaging.set("jar")
         }
         gradlePlugins.plugins.all {
             create {
