@@ -3,21 +3,20 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.14.0"
+    id("io.deepmedia.tools.deployer") version "0.15.0"
     kotlin("plugin.serialization") version "1.9.23"
     id("org.jetbrains.dokka") version "1.9.20"
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:8.1.1")
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
 
     // api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
 
-    implementation("io.ktor:ktor-client-core:2.3.11")
-    implementation("io.ktor:ktor-client-cio:2.3.11")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.11")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11")
+    implementation("io.ktor:ktor-client-core:2.3.13")
+    implementation("io.ktor:ktor-client-cio:2.3.13")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.13")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.13")
 }
 
 // To publish the plugin itself...
@@ -33,7 +32,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.15.0" // on change, update README
+version = "0.16.0" // on change, update README
 
 val javadocs = tasks.register<Jar>("dokkaJavadocJar") {
     dependsOn(tasks.dokkaJavadoc)

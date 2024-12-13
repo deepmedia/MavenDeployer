@@ -45,7 +45,7 @@ import java.io.File
  *
  * We go the second route below, which is a bit tricky because we have to deal with [Any] types.
  *
- * [Artifacts.Entry.Resolved.artifactForMaven]: May be one of
+ * [Artifacts.Entry.Resolved.artifact]: May be one of
  * - [org.gradle.api.artifacts.PublishArtifact]. Extension and classifier values are taken from the wrapped instance.
  * - [org.gradle.api.tasks.bundling.AbstractArchiveTask]. Extension and classifier values are taken from the wrapped instance.
  * - Anything that can be resolved to a [java.io.File] via the [org.gradle.api.Project.file] method.
@@ -79,9 +79,9 @@ internal fun Artifacts.Entry.Resolved.wrapped(project: Project, logger: Logger, 
         else -> when (val data = unwrappedArtifact) {
             is PublishArtifact -> data.classifier to data.extension
             is AbstractArchiveTask -> data.archiveClassifier.orNull to data.archiveExtension.get()
-            // NOTE: logic here is very weak, could at least check if last() seems to be a version number and if so,
-            // we can infer that this file has no classifier (that is, it's the main POM artifact)
-            else -> resolvedFile.nameWithoutExtension.split("-").last() to resolvedFile.extension
+            // There's no safe way to determine the classifier from the filename. If important, users should specify it
+            // and the artifact would be an Artifacts.Entry.Dictionary which is a few branches above.
+            else -> null to resolvedFile.extension
         }
     }
 

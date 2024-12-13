@@ -5,10 +5,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.kotlin.dsl.domainObjectSet
-import org.gradle.kotlin.dsl.findByType
-import org.gradle.kotlin.dsl.newInstance
-import org.gradle.kotlin.dsl.property
+import org.gradle.kotlin.dsl.*
 import javax.inject.Inject
 
 open class ProjectInfo @Inject constructor(private val objects: ObjectFactory) : LicenseScope, DeveloperScope, ScmScope {

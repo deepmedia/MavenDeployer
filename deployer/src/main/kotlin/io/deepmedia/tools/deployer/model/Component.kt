@@ -214,26 +214,6 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
         docs.set(Artifacts.Entry.Promise { it.makeEmptyDocsJar })
     }
 
-    // private val fallbackSources: Property<Project.() -> TaskProvider<Jar>> = objects.property()
-    // private val fallbackDocs: Property<Project.() -> TaskProvider<Jar>> = objects.property()
-    // fun emptySources() { fallbackSources.set { makeEmptySourcesJar } }
-    // fun kotlinSources() { fallbackSources.set { makeKotlinSourcesJar } }
-    // fun javaSources() { fallbackSources.set { makeJavaSourcesJar } }
-    // fun emptyDocs() { fallbackDocs.set { makeEmptyDocsJar } }
-    /* internal fun resolveSources(project: Project): Artifacts.Entry? {
-        val fallback = fallbackSources.map { project.it() }
-            .map { taskProvider -> Artifacts.Entry(taskProvider, taskProvider) }
-        // val fallback = fallbackSources.map { project.makeSourcesJar(spec, this, project.it()) }
-        return sources.orElse(fallback).orNull
-    }
-
-    internal fun resolveDocs(project: Project): Artifacts.Entry? {
-        val fallback = fallbackSources.map { project.it() }
-            .map { taskProvider -> Artifacts.Entry(taskProvider, taskProvider) }
-        // val fallback = fallbackDocs.map { project.makeDocsJar(spec, this, project.it()) }
-        return docs.orElse(fallback).orNull
-    } */
-
     val extras: Artifacts = objects.newInstance()
 
     val groupId = objects.property<Transformer<String, String>>()
