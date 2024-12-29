@@ -1,7 +1,6 @@
 package io.deepmedia.tools.deployer.inference
 
 import io.deepmedia.tools.deployer.isKotlinProject
-import io.deepmedia.tools.deployer.model.Component
 import io.deepmedia.tools.deployer.model.DeploySpec
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -27,11 +26,11 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
  */
 internal class AndroidInference(private val componentNames: List<String>) : Inference {
 
-    override fun inferComponents(project: Project, spec: DeploySpec, create: (Component.() -> Unit) -> Component) {
+    override fun inferComponents(project: Project, spec: DeploySpec, create: InferenceComponentFactory) {
         project.plugins.withId("com.android.library") {
             val kotlin = if (project.isKotlinProject) project.kotlinExtension else null
             componentNames.forEach { componentName ->
-                create {
+                create(true) {
                     fromSoftwareComponent(componentName)
 
                     packaging.set("aar")
