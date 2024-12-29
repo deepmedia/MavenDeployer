@@ -37,7 +37,7 @@ pluginManagement {
 
 // build.gradle.kts of deployable modules
 plugins {
-    id("io.deepmedia.tools.deployer") version "0.16.0"
+    id("io.deepmedia.tools.deployer") version "0.17.0"
 }
 ```
 
