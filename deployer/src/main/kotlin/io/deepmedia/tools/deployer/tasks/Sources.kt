@@ -18,10 +18,13 @@ internal val MavenArtifact.isSourcesJar get() = classifier == "sources" && exten
 
 internal val Project.makeEmptySourcesJar get() = tasks.maybeRegister<Jar>("makeEmptySourcesJar") {
     archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("deployer").get().dir("builtins").dir("emptySources"))
 }
 
 internal val Project.makeKotlinSourcesJar: TaskProvider<Jar> get() = tasks.maybeRegister("makeKotlinSourcesJar") {
     archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("deployer").get().dir("builtins").dir("kotlinSources"))
+
     val kotlin = project.kotlinExtension
     kotlin.sourceSets.all {
         val sourceSet = this
@@ -34,6 +37,8 @@ internal val Project.makeKotlinSourcesJar: TaskProvider<Jar> get() = tasks.maybe
 
 internal val Project.makeJavaSourcesJar: TaskProvider<Jar> get() = tasks.maybeRegister("makeJavaSourcesJar") {
     archiveClassifier.set("sources")
+    destinationDirectory.set(layout.buildDirectory.dir("deployer").get().dir("builtins").dir("javaSources"))
+
     val java = project.extensions.getByType<JavaPluginExtension>()
     from(java.sourceSets["main"].allSource)
 }

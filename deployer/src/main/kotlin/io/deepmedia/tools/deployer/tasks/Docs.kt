@@ -11,6 +11,7 @@ internal val MavenArtifact.isDocsJar get() = classifier == "javadoc" && extensio
 
 internal val Project.makeEmptyDocsJar get() = tasks.maybeRegister<Jar>("makeEmptyDocsJar") {
     archiveClassifier.set("javadoc")
+    destinationDirectory.set(layout.buildDirectory.dir("deployer").get().dir("builtins").dir("emptyDocs"))
 }
 
 /* private val Project.makeAutoDocsJar: TaskProvider<Jar> get() {
