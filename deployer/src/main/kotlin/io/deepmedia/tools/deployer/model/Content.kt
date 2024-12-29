@@ -52,10 +52,10 @@ open class Content @Inject constructor(private val objects: ObjectFactory) : Com
         inherit.finalizeValue() // fixes 'components'
         inferenceData.finalizeValue()
         inferenceData.get().forEach {
-            it.inference.inferComponents(project, spec) { configure ->
+            it.inference.inferComponents(project, spec) { runUserAction, configure ->
                 component {
                     configure()
-                    it.action.execute(this)
+                    if (runUserAction) it.action.execute(this)
                 }
             }
         }

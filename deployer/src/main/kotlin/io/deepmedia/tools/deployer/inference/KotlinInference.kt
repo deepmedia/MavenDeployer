@@ -1,6 +1,5 @@
 package io.deepmedia.tools.deployer.inference
 
-import io.deepmedia.tools.deployer.model.Component
 import io.deepmedia.tools.deployer.model.DeploySpec
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -18,13 +17,13 @@ internal class KotlinInference : Inference {
         "org.jetbrains.kotlin.multiplatform"
     )
 
-    private fun inferComponent(target: KotlinTarget, multiplatform: Boolean, create: (Component.() -> Unit) -> Component) {
+    private fun inferComponent(target: KotlinTarget, multiplatform: Boolean, create: InferenceComponentFactory) {
         if (target is KotlinAndroidTarget) {
             // Should use AndroidInference!
             return
         }
         if (target is KotlinOnlyTarget<*>) {
-            create {
+            create(true) {
                 fromKotlinTarget(target)
                 if (multiplatform && target.platformType != KotlinPlatformType.common) {
                     artifactId.set { "$it-${target.name.lowercase()}" }
@@ -35,7 +34,7 @@ internal class KotlinInference : Inference {
         }
     }
 
-    override fun inferComponents(project: Project, spec: DeploySpec, create: (Component.() -> Unit) -> Component) {
+    override fun inferComponents(project: Project, spec: DeploySpec, create: InferenceComponentFactory) {
         pluginIds.forEach { pluginId ->
             project.plugins.withId(pluginId) {
                 val kotlin = project.kotlinExtension

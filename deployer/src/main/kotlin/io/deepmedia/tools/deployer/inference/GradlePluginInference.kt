@@ -17,7 +17,7 @@ import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
  */
 internal class GradlePluginInference : Inference {
 
-    override fun inferComponents(project: Project, spec: DeploySpec, create: (Component.() -> Unit) -> Component) {
+    override fun inferComponents(project: Project, spec: DeploySpec, create: InferenceComponentFactory) {
         project.plugins.withId("java-gradle-plugin") {
             val gradlePlugin = project.extensions.getByType<GradlePluginDevelopmentExtension>()
             project.whenEvaluated {
@@ -27,13 +27,13 @@ internal class GradlePluginInference : Inference {
         }
     }
 
-    private fun inferComponents(project: Project, spec: DeploySpec, gradlePlugins: GradlePluginDevelopmentExtension, create: (Component.() -> Unit) -> Component) {
-        val mainComponent = create {
+    private fun inferComponents(project: Project, spec: DeploySpec, gradlePlugins: GradlePluginDevelopmentExtension, create: InferenceComponentFactory) {
+        val mainComponent = create(true) {
             fromMavenPublication("pluginMaven", clone = true)
             packaging.set("jar")
         }
         gradlePlugins.plugins.all {
-            create {
+            create(false) {
                 fromGradlePluginDeclaration(this@all, mainComponent, clone = true)
             }
         }
