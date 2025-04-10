@@ -29,6 +29,13 @@ open class Scm @Inject constructor(objects: ObjectFactory) {
         sourceUrl { _ /* tag */ -> "https://bitbucket.org/$user/$repository/src/" }
     }
 
+    fun Scm.fromGilab(user: String, repository: String) {
+        url.set("https://gitlab.com/$user/$repository")
+        connection.set("scm:git:git://gitlab.com/$user/$repository.git")
+        developerConnection.set("scm:git:ssh://gitlab.com:$user/$repository.git")
+        sourceUrl { tag -> "https://gitlab.com/$user/$repository/tree/$tag" }
+    }
+
     internal fun fallback(to: Scm) {
         url.convention(to.url)
         connection.convention(to.connection)
