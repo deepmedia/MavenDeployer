@@ -4,12 +4,12 @@ plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
     id("io.deepmedia.tools.deployer") version "0.17.0-rc1"
-    kotlin("plugin.serialization") version "1.9.23"
+    kotlin("plugin.serialization") version "2.1.20"
     id("org.jetbrains.dokka") version "1.9.20"
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20")
 
     // api("org.jetbrains.dokka:dokka-gradle-plugin:1.8.20")
 
