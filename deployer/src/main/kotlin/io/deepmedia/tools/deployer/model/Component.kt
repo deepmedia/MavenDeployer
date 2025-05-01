@@ -11,8 +11,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.publish.PublicationContainer
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.plugin.devel.PluginDeclaration
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -122,19 +120,16 @@ open class Component @Inject constructor(private val objects: ObjectFactory) {
             // already has the component so no extra configureWhen is needed here. See:
             // https://youtrack.jetbrains.com/issue/KT-53300
         } else {
-            fromNonAndroidNonMetadataKotlinTarget(target)
+            val softwareComponents = (target as KotlinTarget).components
+            val softwareComponent = softwareComponents.singleOrNull()
+            softwareComponent ?: error("$target has more/less than 1 component: $softwareComponents")
+            fromSoftwareComponent(softwareComponent, target)
         }
     }
 
     fun fromKotlinTarget(target: KotlinWithJavaTarget<*, *>) {
-        fromNonAndroidNonMetadataKotlinTarget(target)
-    }
-
-    private fun fromNonAndroidNonMetadataKotlinTarget(target: KotlinTarget) {
-        val softwareComponents = target.components
-        val softwareComponent = softwareComponents.singleOrNull()
-        softwareComponent ?: error("$target has more/less than 1 component: ${softwareComponents}")
-        fromSoftwareComponent(softwareComponent, target)
+        // target.components doesn't work in this case.
+        fromSoftwareComponent("java", target)
     }
 
     /**

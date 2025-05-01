@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinOnlyTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 
 internal class KotlinInference : Inference {
     private val pluginIds = listOf(
@@ -22,15 +23,19 @@ internal class KotlinInference : Inference {
             // Should use AndroidInference!
             return
         }
-        if (target is KotlinOnlyTarget<*>) {
+        if (target is KotlinOnlyTarget<*> || target is KotlinWithJavaTarget<*, *>) {
             create(true) {
-                fromKotlinTarget(target)
+                if (target is KotlinOnlyTarget<*>) {
+                    fromKotlinTarget(target)
+                } else if (target is KotlinWithJavaTarget<*, *>) {
+                    fromKotlinTarget(target)
+                }
                 if (multiplatform && target.platformType != KotlinPlatformType.common) {
                     artifactId.set { "$it-${target.name.lowercase()}" }
                 }
             }
         } else {
-            error("Unexpected kotlin target: $target")
+            error("Unexpected kotlin target: $target (${target::class})")
         }
     }
 
