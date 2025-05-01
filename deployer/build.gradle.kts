@@ -3,7 +3,7 @@
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
-    id("io.deepmedia.tools.deployer") version "0.17.0-rc1"
+    id("io.deepmedia.tools.deployer") version "0.18.0-rc1"
     kotlin("plugin.serialization") version "2.1.20"
     id("org.jetbrains.dokka") version "1.9.20"
 }
@@ -32,7 +32,7 @@ gradlePlugin {
 }
 
 group = "io.deepmedia.tools.deployer"
-version = "0.17.0" // on change, update README
+version = "0.18.0" // on change, update README
 
 val javadocs = tasks.register<Jar>("dokkaJavadocJar") {
     dependsOn(tasks.dokkaJavadoc)
